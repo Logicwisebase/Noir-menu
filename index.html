@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --navy:#0B1220;
@@ -724,71 +725,67 @@ function syncVariant(container, breadIdx, art){
 }
 
 /* ============================================================
-   SHARED ORDER STORAGE
-   Both screens read/write the SAME artifact's persistent storage,
-   so an order placed on the Customer Kiosk really does show up on
-   the Manager Screen — including across separate tabs/devices, as
-   long as both are opened from this same artifact. (A copy of this
-   file saved to disk and opened directly in a browser has no
-   window.storage, so it falls back to acting locally-only — see
-   the "(This device couldn't reach...)" note that appears in that
-   case.)
+   SUPABASE — real shared database
+   Every device (customer phones + the manager screen) talks to
+   the same Supabase project, so orders sync for real — no two
+   screens need to come from the same file or tab anymore.
    ============================================================ */
-const ORDERS_KEY = 'orders';
+const SUPABASE_URL = 'https://rzkkhltqbjxlkfrbgpsf.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_-pJrMR34fNQrAQ9RrogaUg_dKzZXLco';
+const ORDERS_TABLE = 'Orders';   // matches the table name exactly as created in Supabase
 
-async function fetchSharedOrders(){
-  try{
-    const res = await window.storage.get(ORDERS_KEY, true);
-    return res && res.value ? JSON.parse(res.value) : [];
-  }catch(e){
-    return null;   // signals "storage unavailable", distinct from "empty"
-  }
-}
-async function pushSharedOrders(orders){
-  try{
-    await window.storage.set(ORDERS_KEY, JSON.stringify(orders), true);
-    return true;
-  }catch(e){
-    console.error('NOIR: could not sync orders', e);
-    return false;
-  }
-}
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-function seedDemoOrders(){
-  const now = Date.now();
-  return [
-    { id: 104, tableLabel: 'Table 9', orderType: 'dinein', status: 'new',
-      items: [ {name:'Beef Steak', mods:['Medium'], qty:1, unitPrice:1250} ],
-      subtotal:1250, service:63, tax:63, total:1376, placedAt: now - 2*60*1000 },
-    { id: 103, tableLabel: 'Table 4', orderType: 'dinein', status: 'preparing',
-      items: [ {name:'Ramen', mods:['Extra chashu'], qty:1, unitPrice:580}, {name:'Matcha Latte', mods:[], qty:1, unitPrice:310} ],
-      subtotal:890, service:45, tax:45, total:980, placedAt: now - 9*60*1000 },
-    { id: 102, tableLabel: 'Takeaway', orderType: 'takeaway', status: 'ready',
-      items: [ {name:'Chicken Burger', mods:['Sesame bun','Cheese','No Lettuce'], qty:2, unitPrice:500}, {name:'Truffle Fries', mods:[], qty:1, unitPrice:320} ],
-      subtotal:1320, service:66, tax:66, total:1452, placedAt: now - 14*60*1000 },
-    { id: 101, tableLabel: 'Table 2', orderType: 'dinein', status: 'completed',
-      items: [ {name:'Sushi Platter', mods:[], qty:1, unitPrice:890}, {name:'Cold Coffee', mods:['No House syrup'], qty:2, unitPrice:280} ],
-      subtotal:1450, service:73, tax:73, total:1596, placedAt: now - 41*60*1000 },
-  ];
+function mapDbOrder(row){
+  return {
+    id: row.id,
+    tableLabel: row.table_label,
+    orderType: row.order_type,
+    items: row.items || [],
+    subtotal: row.subtotal,
+    service: row.service,
+    tax: row.tax,
+    total: row.total,
+    status: row.status,
+    placedAt: row.placed_at ? new Date(row.placed_at).getTime() : Date.now()
+  };
 }
 
-let mgrHasLoadedOnce = false;
+async function fetchAllOrders(){
+  const { data, error } = await sb.from(ORDERS_TABLE).select('*').order('id', { ascending:false });
+  if(error){ console.error('NOIR: could not load orders', error); return null; }
+  return (data || []).map(mapDbOrder);
+}
+
+async function insertOrder(input){
+  const { data, error } = await sb.from(ORDERS_TABLE).insert([{
+    table_label: input.tableLabel,
+    order_type: input.orderType,
+    items: input.items,
+    subtotal: input.subtotal,
+    service: input.service,
+    tax: input.tax,
+    total: input.total,
+    status: 'new'
+  }]).select().single();
+  if(error){ console.error('NOIR: could not save order', error); return null; }
+  return mapDbOrder(data);
+}
+
+async function updateOrderStatus(id, status){
+  const { error } = await sb.from(ORDERS_TABLE).update({ status }).eq('id', id);
+  if(error){ console.error('NOIR: could not update order status', error); return false; }
+  return true;
+}
+
 async function loadAndRenderOrders(){
-  const result = await fetchSharedOrders();
-  if(result === null){
-    if(!mgrHasLoadedOnce){ ORDERS = seedDemoOrders(); mgrHasLoadedOnce = true; }
-  }else{
-    if(result.length === 0 && !mgrHasLoadedOnce){
-      ORDERS = seedDemoOrders();
-      pushSharedOrders(ORDERS);
-    }else{
-      ORDERS = result;
-    }
-    mgrHasLoadedOnce = true;
-  }
-  orderCounter = ORDERS.reduce((m,o)=>Math.max(m,o.id), 100);
+  const orders = await fetchAllOrders();
+  if(orders !== null){ ORDERS = orders; }
+  // if the fetch fails (offline, misconfigured keys, etc.) we just keep showing whatever we last had
   renderAllManagerData();
 }
+
 
 /* ============================================================
 
@@ -1060,12 +1057,9 @@ function placeOrder(){
 }
 
 async function placeOrderRemote(itemsSnapshot, subtotal, service, tax, total){
-  const existing = await fetchSharedOrders();     // read the live shared order log
-  const list = existing || [];                    // null = storage unreachable, fall back to a fresh local list
-  const nextId = list.reduce((max,o)=>Math.max(max,o.id), 100) + 1;
-  const order = { id: nextId, tableLabel, orderType, items: itemsSnapshot, subtotal, service, tax, total, status: 'new', placedAt: Date.now() };
-  list.unshift(order);
-  const synced = await pushSharedOrders(list);     // write it back so the Manager Screen sees it
+  const saved = await insertOrder({ tableLabel, orderType, items: itemsSnapshot, subtotal, service, tax, total });
+  const synced = !!saved;
+  const order = saved || { id: '—', tableLabel, orderType, items: itemsSnapshot, subtotal, service, tax, total, status: 'new', placedAt: Date.now() };
 
   cart = [];
   updateCartCount();
@@ -1076,7 +1070,7 @@ async function placeOrderRemote(itemsSnapshot, subtotal, service, tax, total){
     <div class="confirm">
       <div class="confirm-icon">✓</div>
       <h3>Order #${order.id} sent to the kitchen</h3>
-      <p>${orderType === 'takeaway' ? 'NOIR will have your order ready for pickup shortly.' : tableLabel + ' · NOIR will bring your order out shortly.'}${synced ? '' : ' (This device couldn\'t reach the shared order log, so the kitchen may not see it yet.)'}</p>
+      <p>${orderType === 'takeaway' ? 'NOIR will have your order ready for pickup shortly.' : tableLabel + ' · NOIR will bring your order out shortly.'}${synced ? '' : ' (This device couldn\'t reach the kitchen system — please tell a staff member your order at the counter.)'}</p>
       <div class="mini-ticket">
         <b>ORDER #${order.id} · ${(order.tableLabel||'').toUpperCase()}</b><br>
         ${order.items.map(it=>`${it.qty}× ${it.name}`).join('<br>')}<br>
@@ -1154,9 +1148,10 @@ function renderAllManagerData(){
     btn.onclick = ()=>{
       const o = ORDERS.find(x=>x.id===parseInt(btn.dataset.advance));
       if(o && STATUS_FLOW[o.status]){
-        o.status = STATUS_FLOW[o.status];
+        const newStatus = STATUS_FLOW[o.status];
+        o.status = newStatus;
         renderAllManagerData();
-        pushSharedOrders(ORDERS);   // sync the status change back to the shared order log
+        updateOrderStatus(o.id, newStatus);   // sync the status change back to Supabase
       }
     };
   });
@@ -1252,7 +1247,7 @@ updateCartCount();
 renderMenuTable();
 renderQR();
 loadAndRenderOrders();
-setInterval(loadAndRenderOrders, 4000);
+setInterval(loadAndRenderOrders, 5000);   // check Supabase for new/updated orders every 5s
 
 applyRoute();
 
