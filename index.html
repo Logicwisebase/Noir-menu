@@ -138,7 +138,51 @@
   .total-box{flex:1;display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);border-radius:12px;padding:14px 20px;background:#fff;}
   .total-box .tl{font-size:11px;color:var(--ink-soft);font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
   .total-box .tv{font-size:19px;font-weight:800;color:var(--ink);margin-top:2px;}
-  .finaladdcart{background:var(--navy);color:#fff;padding:16px 26px;border-radius:12px;font-size:14.5px;font-weight:700;flex-shrink:0;}
+  .finaladdcart{background:var(--navy);color:#fff;padding:16px 26px;border-radius:12px;font-size:14.5px;font-weight:700;flex-shrink:0;transition:background .15s ease;}
+  .finaladdcart.added{background:#2E8B57;}
+
+  /* ---- checkout fields (name/phone/payment) ---- */
+  .checkout-fields{margin-top:22px;padding-top:20px;border-top:1px solid var(--line);}
+  .checkout-fields .cf-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin-bottom:8px;}
+  .checkout-fields input{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:11px 14px;font-size:13.5px;font-family:inherit;color:var(--ink);margin-bottom:10px;}
+  .checkout-fields input:focus{outline:none;border-color:var(--accent);}
+  .pay-methods{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:6px;}
+  .paybtn{border:1px solid var(--line);border-radius:9px;padding:10px 8px;font-size:12.5px;font-weight:600;background:#fff;color:var(--ink);}
+  .paybtn.on{border-color:var(--accent);background:rgba(78,110,232,.08);color:var(--accent);}
+  .checkout-error{color:#C0392B;font-size:12px;margin-top:6px;display:none;}
+  .checkout-error.show{display:block;}
+
+  /* ---- generic modal ---- */
+  .modal-overlay{position:fixed;inset:0;background:rgba(11,18,32,.55);z-index:90;display:none;}
+  .modal-overlay.show{display:block;}
+  .modal-box{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:min(92vw,440px);max-height:86vh;overflow-y:auto;background:#fff;border-radius:16px;padding:26px;z-index:91;display:none;box-shadow:0 30px 60px -20px rgba(11,18,32,.4);}
+  .modal-box.show{display:block;}
+  .modal-title{font-size:17px;font-weight:700;margin-bottom:4px;}
+  .modal-sub{font-size:12.5px;color:var(--ink-soft);margin-bottom:18px;}
+  .modal-field{margin-bottom:14px;}
+  .modal-field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin-bottom:6px;}
+  .modal-field input,.modal-field select{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:10px 13px;font-size:13.5px;font-family:inherit;color:var(--ink);}
+  .modal-actions{display:flex;gap:10px;margin-top:20px;}
+  .modal-actions button{flex:1;padding:12px;border-radius:9px;font-size:13.5px;font-weight:700;}
+  .modal-cancel{background:var(--offwhite-2);color:var(--ink);}
+  .modal-save{background:var(--accent);color:#fff;}
+  .modal-close-x{position:absolute;top:16px;right:18px;font-size:16px;color:var(--ink-soft);}
+
+  /* order detail modal specifics */
+  .od-row{display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid var(--line);}
+  .od-item{padding:10px 0;border-bottom:1px solid var(--line);}
+  .od-item .odi-name{font-weight:700;font-size:13.5px;}
+  .od-item .odi-mods{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
+  .od-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(78,110,232,.12);color:var(--accent);margin-top:6px;}
+  .ordercard{cursor:pointer;}
+
+  /* ---- customers tab ---- */
+  .custtable{width:100%;border-collapse:collapse;}
+  .custtable th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-soft);padding:0 10px 10px;}
+  .custtable td{padding:12px 10px;border-top:1px solid var(--line);font-size:13.5px;}
+  .reward-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:#FFF4E0;color:#B8860B;}
+  .repeat-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(78,110,232,.1);color:var(--accent);margin-left:6px;}
+
 
   /* cart drawer */
   .cart-overlay{position:fixed;inset:0;background:rgba(11,18,32,.5);z-index:60;display:none;}
@@ -356,8 +400,8 @@
   <!-- stage 1: welcome -->
   <div class="welcome-screen" id="welcomeScreen">
     <div class="welcome-mark"><svg width="34" height="34" viewBox="0 0 32 32" fill="none"><path d="M16 2 C22 2 26 7 26 13 C26 18 22.5 21 18 21.6 V27 C18 28.5 16.8 30 15 30 C13.4 30 12 28.7 12 27 V13 C12 9.5 14.3 7.2 17.5 7.2 C19.8 7.2 21.5 8.9 21.5 11 C21.5 13.1 19.9 14.6 17.8 14.6" stroke="#F6F3EA" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg></div>
-    <h1 class="welcome-title">NOIR</h1>
-    <div class="welcome-sub">Modern Asian Kitchen · Gulshan</div>
+    <h1 class="welcome-title" id="welcomeTitle">NOIR</h1>
+    <div class="welcome-sub" id="welcomeSub">Modern Asian Kitchen · Gulshan</div>
     <div class="welcome-tap">Tap anywhere to begin</div>
   </div>
 
@@ -386,7 +430,7 @@
     <div class="cust-topbar">
       <div class="cust-brand">
         <div class="cust-brandmark"><svg width="16" height="16" viewBox="0 0 32 32" fill="none"><path d="M16 2 C22 2 26 7 26 13 C26 18 22.5 21 18 21.6 V27 C18 28.5 16.8 30 15 30 C13.4 30 12 28.7 12 27 V13 C12 9.5 14.3 7.2 17.5 7.2 C19.8 7.2 21.5 8.9 21.5 11 C21.5 13.1 19.9 14.6 17.8 14.6" stroke="#F6F3EA" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg></div>
-        <div><div class="cust-restname">NOIR</div><div class="cust-restsub">Modern Asian Kitchen · Gulshan</div></div>
+        <div><div class="cust-restname" id="custRestName">NOIR</div><div class="cust-restsub" id="custRestSub">Modern Asian Kitchen · Gulshan</div></div>
       </div>
       <div class="cust-tablepill"><span class="dot"></span> <span id="tablePillLabel">Dine In</span></div>
       <div class="cust-search">🔍 Search the menu</div>
@@ -417,6 +461,7 @@
       <div class="mgr-navitem on" data-view="mgr-overview"><span>📊</span><span>Overview</span></div>
       <div class="mgr-navitem" data-view="mgr-orders"><span>🧾</span><span>Orders</span><span class="badge" id="ordersBadge">0</span></div>
       <div class="mgr-navitem" data-view="mgr-menu"><span>📋</span><span>Menu</span></div>
+      <div class="mgr-navitem" data-view="mgr-customers"><span>👤</span><span>Customers</span></div>
       <div class="mgr-navitem" data-view="mgr-qr"><span>▦</span><span>QR Codes</span></div>
       <div class="mgr-navitem" data-view="mgr-analytics"><span>📈</span><span>Analytics</span></div>
       <div class="mgr-navitem" data-view="mgr-settings"><span>⚙️</span><span>Settings</span></div>
@@ -428,8 +473,8 @@
 
     <div class="mgr-main">
       <div class="mgr-topbar">
-        <div><div class="mgr-greet">Good evening, NOIR</div><div class="mgr-greet-sub">Gulshan branch · live view</div></div>
-        <div class="mgr-avatar">N</div>
+        <div><div class="mgr-greet" id="mgrGreet">Good evening, NOIR</div><div class="mgr-greet-sub" id="mgrGreetSub">Gulshan branch · live view</div></div>
+        <div class="mgr-avatar" id="mgrAvatar">N</div>
       </div>
 
       <div class="mgr-view on" id="mgr-overview">
@@ -479,6 +524,17 @@
         </div>
       </div>
 
+      <div class="mgr-view" id="mgr-customers">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Customer database</div></div>
+          <div class="qr-baseurl-hint" style="margin-bottom:16px;">Built automatically from the name &amp; phone number customers enter at checkout. Repeat visitors are recognized by phone number, so you can spot regulars and reward them later.</div>
+          <table class="custtable">
+            <thead><tr><th>Name</th><th>Phone</th><th>Visits</th><th>Total spent</th><th>Last visit</th></tr></thead>
+            <tbody id="custTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="mgr-view" id="mgr-qr">
         <div class="panel">
           <div class="panel-head"><div class="panel-title">Kiosk link</div></div>
@@ -518,8 +574,8 @@
       <div class="mgr-view" id="mgr-settings">
         <div class="panel">
           <div class="panel-head"><div class="panel-title">Restaurant profile</div></div>
-          <div class="settingrow"><div><div class="setlabel">Restaurant name</div><div class="setdesc">NOIR</div></div><span class="editbtn">Edit</span></div>
-          <div class="settingrow"><div><div class="setlabel">Branch</div><div class="setdesc">Gulshan, Dhaka</div></div><span class="editbtn">Edit</span></div>
+          <div class="settingrow"><div><div class="setlabel">Restaurant name</div><div class="setdesc" id="setRestName">NOIR</div></div><span class="editbtn" id="editRestName">Edit</span></div>
+          <div class="settingrow"><div><div class="setlabel">Branch</div><div class="setdesc" id="setBranch">Gulshan, Dhaka</div></div><span class="editbtn" id="editBranch">Edit</span></div>
         </div>
         <div class="panel">
           <div class="panel-head"><div class="panel-title">Customer menu appearance</div></div>
@@ -538,13 +594,17 @@
   </div>
 </div>
 
+<!-- ================= SHARED MODAL (edit forms + order detail) ================= -->
+<div class="modal-overlay" id="modalOverlay"></div>
+<div class="modal-box" id="modalBox"></div>
+
 <script>
 
 /* ============================================================
-   SHARED DATA — both views read/write the same in-memory state.
-   No backend, so this only "syncs" within this single open tab —
-   switching between Customer Kiosk and Manager Screen below is
-   how the demo simulates two devices talking to each other.
+   SHARED DATA — menu, categories, and illustration helpers used
+   by both the Customer Kiosk and the Manager Screen. Orders and
+   customers live in Supabase (see the SUPABASE block below), so
+   they're real and shared across every device.
    ============================================================ */
 function fmt(n){ return "৳"+n.toLocaleString(); }
 
@@ -732,7 +792,8 @@ function syncVariant(container, breadIdx, art){
    ============================================================ */
 const SUPABASE_URL = 'https://rzkkhltqbjxlkfrbgpsf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_-pJrMR34fNQrAQ9RrogaUg_dKzZXLco';
-const ORDERS_TABLE = 'Orders';   // matches the table name exactly as created in Supabase
+const ORDERS_TABLE = 'Orders';       // matches the table name exactly as created in Supabase
+const CUSTOMERS_TABLE = 'Customers'; // create this table too — see the setup instructions
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -748,6 +809,9 @@ function mapDbOrder(row){
     tax: row.tax,
     total: row.total,
     status: row.status,
+    customerName: row.customer_name,
+    customerPhone: row.customer_phone,
+    paymentMethod: row.payment_method,
     placedAt: row.placed_at ? new Date(row.placed_at).getTime() : Date.now()
   };
 }
@@ -767,7 +831,10 @@ async function insertOrder(input){
     service: input.service,
     tax: input.tax,
     total: input.total,
-    status: 'new'
+    status: 'new',
+    customer_name: input.customerName || null,
+    customer_phone: input.customerPhone || null,
+    payment_method: input.paymentMethod || null
   }]).select().single();
   if(error){ console.error('NOIR: could not save order', error); return null; }
   return mapDbOrder(data);
@@ -784,8 +851,55 @@ async function loadAndRenderOrders(){
   if(orders !== null){ ORDERS = orders; }
   // if the fetch fails (offline, misconfigured keys, etc.) we just keep showing whatever we last had
   renderAllManagerData();
+  renderCustomers();
 }
 
+/* ---------- customer database (repeat visitors + reward eligibility) ---------- */
+async function recordCustomerVisit(name, phone, amountSpent){
+  if(!phone) return;
+  const { data: existing, error: findErr } = await sb.from(CUSTOMERS_TABLE).select('*').eq('phone', phone).maybeSingle();
+  if(findErr){ console.error('NOIR: could not look up customer', findErr); return; }
+  if(existing){
+    await sb.from(CUSTOMERS_TABLE).update({
+      name: name || existing.name,
+      visit_count: (existing.visit_count || 1) + 1,
+      total_spent: (existing.total_spent || 0) + amountSpent,
+      last_visit: new Date().toISOString()
+    }).eq('id', existing.id);
+  }else{
+    await sb.from(CUSTOMERS_TABLE).insert([{
+      name: name || null, phone, visit_count: 1, total_spent: amountSpent, last_visit: new Date().toISOString()
+    }]);
+  }
+}
+
+async function fetchAllCustomers(){
+  const { data, error } = await sb.from(CUSTOMERS_TABLE).select('*').order('visit_count', { ascending:false });
+  if(error){ console.error('NOIR: could not load customers', error); return null; }
+  return data || [];
+}
+
+async function renderCustomers(){
+  const customers = await fetchAllCustomers();
+  const tbody = document.getElementById('custTbody');
+  if(!tbody) return;
+  if(customers === null){
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:24px 0;">Couldn't load the customer list.</td></tr>`;
+    return;
+  }
+  if(customers.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:24px 0;">No customers yet — they're added automatically once someone checks out with their name and phone number.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = customers.map(c=>`
+    <tr>
+      <td>${c.name || '—'}${c.visit_count>1?'<span class="repeat-badge">Repeat</span>':''}${c.visit_count>0 && c.visit_count%5===0?' <span class="reward-badge">🎁 Reward eligible</span>':''}</td>
+      <td>${c.phone}</td>
+      <td>${c.visit_count}</td>
+      <td>${fmt(c.total_spent||0)}</td>
+      <td>${c.last_visit ? timeAgo(new Date(c.last_visit).getTime()) : '—'}</td>
+    </tr>`).join('');
+}
 
 /* ============================================================
 
@@ -795,6 +909,22 @@ let activeCat = "popular";
 let viewMode = "grid";      // 'grid' | 'detail'
 let selectedItemId = null;
 let cart = [];
+let checkoutName = '';
+let checkoutPhone = '';
+let checkoutPayment = null;   // 'cash' | 'bkash' | 'nagad' | 'card'
+let restaurantName = 'NOIR';
+let branchName = 'Gulshan, Dhaka';
+function applyBranding(){
+  document.getElementById('welcomeTitle').textContent = restaurantName;
+  document.getElementById('welcomeSub').textContent = `Modern Asian Kitchen · ${branchName}`;
+  document.getElementById('custRestName').textContent = restaurantName;
+  document.getElementById('custRestSub').textContent = `Modern Asian Kitchen · ${branchName}`;
+  document.getElementById('mgrGreet').textContent = `Good evening, ${restaurantName}`;
+  document.getElementById('mgrGreetSub').textContent = `${branchName} · live view`;
+  document.getElementById('mgrAvatar').textContent = restaurantName.charAt(0).toUpperCase();
+  const restDesc = document.getElementById('setRestName'); if(restDesc) restDesc.textContent = restaurantName;
+  const branchDesc = document.getElementById('setBranch'); if(branchDesc) branchDesc.textContent = branchName;
+}
 let pdState = null;
 
 /* ---------- welcome → dine in/takeaway → menu ---------- */
@@ -989,6 +1119,18 @@ function addToCart(){
   cart.push({ menuId:m.id, name:m.name, art:m.art, tint:m.tint, bread:breadName, addons:addonNames, removals:removalNames, qty:pdState.qty, unitPrice });
   updateCartCount();
   pulsePhoto();
+
+  const btn = document.getElementById('addToCartBtn');
+  if(btn){
+    btn.textContent = 'Added ✓';
+    btn.classList.add('added');
+    btn.disabled = true;
+    setTimeout(()=>{
+      btn.textContent = 'Add to Cart';
+      btn.classList.remove('added');
+      btn.disabled = false;
+    }, 1100);
+  }
 }
 function cartCount(){ return cart.reduce((s,i)=>s+i.qty,0); }
 function cartSubtotal(){ return cart.reduce((s,i)=>s+i.unitPrice*i.qty,0); }
@@ -1031,6 +1173,20 @@ function renderCartDrawer(){
       <div class="summary-row"><span>Service charge (5%)</span><span>${fmt(service)}</span></div>
       <div class="summary-row"><span>Tax (5%)</span><span>${fmt(tax)}</span></div>
       <div class="summary-row total"><span>Total</span><span>${fmt(total)}</span></div>
+
+      <div class="checkout-fields">
+        <div class="cf-label">Your details</div>
+        <input type="text" id="custNameInput" placeholder="Your name" value="${checkoutName.replace(/"/g,'&quot;')}">
+        <input type="tel" id="custPhoneInput" placeholder="Phone number" value="${checkoutPhone.replace(/"/g,'&quot;')}">
+        <div class="cf-label">Pay with</div>
+        <div class="pay-methods">
+          <button type="button" class="paybtn ${checkoutPayment==='cash'?'on':''}" data-pay="cash">💵 Cash</button>
+          <button type="button" class="paybtn ${checkoutPayment==='bkash'?'on':''}" data-pay="bkash">📱 bKash</button>
+          <button type="button" class="paybtn ${checkoutPayment==='nagad'?'on':''}" data-pay="nagad">📱 Nagad</button>
+          <button type="button" class="paybtn ${checkoutPayment==='card'?'on':''}" data-pay="card">💳 Card</button>
+        </div>
+        <div class="checkout-error" id="checkoutError">Please add your name, phone number, and how you'll pay.</div>
+      </div>
     </div>
     <div class="cart-drawer-foot"><button class="place-btn" id="placeOrderBtn">Place Order</button></div>
   `;
@@ -1040,10 +1196,25 @@ function renderCartDrawer(){
     const i=n.dataset.dec; cart[i].qty--; if(cart[i].qty<=0) cart.splice(i,1);
     renderCartDrawer(); updateCartCount();
   });
+  document.getElementById('custNameInput').oninput = (e)=>{ checkoutName = e.target.value; };
+  document.getElementById('custPhoneInput').oninput = (e)=>{ checkoutPhone = e.target.value; };
+  document.querySelectorAll('[data-pay]').forEach(btn=>{
+    btn.onclick = ()=>{
+      checkoutPayment = btn.dataset.pay;
+      document.querySelectorAll('[data-pay]').forEach(b=>b.classList.remove('on'));
+      btn.classList.add('on');
+    };
+  });
   document.getElementById('placeOrderBtn').onclick = placeOrder;
 }
 
 function placeOrder(){
+  if(!checkoutName.trim() || !checkoutPhone.trim() || !checkoutPayment){
+    document.getElementById('checkoutError').classList.add('show');
+    return;
+  }
+  document.getElementById('checkoutError').classList.remove('show');
+
   const subtotal = cartSubtotal();
   const service = Math.round(subtotal*0.05);
   const tax = Math.round(subtotal*0.05);
@@ -1057,9 +1228,15 @@ function placeOrder(){
 }
 
 async function placeOrderRemote(itemsSnapshot, subtotal, service, tax, total){
-  const saved = await insertOrder({ tableLabel, orderType, items: itemsSnapshot, subtotal, service, tax, total });
+  const saved = await insertOrder({
+    tableLabel, orderType, items: itemsSnapshot, subtotal, service, tax, total,
+    customerName: checkoutName.trim(), customerPhone: checkoutPhone.trim(), paymentMethod: checkoutPayment
+  });
   const synced = !!saved;
   const order = saved || { id: '—', tableLabel, orderType, items: itemsSnapshot, subtotal, service, tax, total, status: 'new', placedAt: Date.now() };
+
+  if(synced) recordCustomerVisit(checkoutName.trim(), checkoutPhone.trim(), total);
+  checkoutPayment = null;
 
   cart = [];
   updateCartCount();
@@ -1101,7 +1278,7 @@ function orderCardHtml(o, withAction){
   const itemsStr = o.items.map(it=>`${it.qty}× ${it.name}${it.mods.length?' ('+it.mods.join(', ')+')':''}`).join(' · ');
   const action = STATUS_FLOW[o.status];
   return `
-    <div class="ordercard">
+    <div class="ordercard" data-order-id="${o.id}">
       <div class="oc-top"><div><div class="oc-table">${o.tableLabel} · #${o.id}</div><div class="oc-time">${timeAgo(o.placedAt)}</div></div><span class="status-pill st-${o.status}">${STATUS_LABEL[o.status]}</span></div>
       <div class="oc-items">${itemsStr}</div>
       <div class="oc-bottom"><div class="oc-total">${fmt(o.total)}</div>
@@ -1111,10 +1288,90 @@ function orderCardHtml(o, withAction){
 }
 function ticketHtml(o){
   return `<div class="ticket">
-    <div class="ticket-head">NOIR · ${(o.tableLabel||'').toUpperCase()}<br>ORDER #${o.id}</div>
+    <div class="ticket-head">${restaurantName} · ${(o.tableLabel||'').toUpperCase()}<br>ORDER #${o.id}</div>
     ${o.items.map(it=>`<div class="ticket-row"><span>${it.qty}× ${it.name}</span></div>${it.mods.length?`<div style="padding-left:10px;color:#8a92a3;">${it.mods.join(', ')}</div>`:''}`).join('')}
     <div class="ticket-foot">TOTAL ${fmt(o.total)}<br>${new Date(o.placedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
   </div>`;
+}
+
+/* ============================================================
+   SHARED MODAL — used for order details and every "Edit" button
+   ============================================================ */
+function openModal(html){
+  document.getElementById('modalBox').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('show');
+  document.getElementById('modalBox').classList.add('show');
+}
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('show');
+  document.getElementById('modalBox').classList.remove('show');
+}
+document.getElementById('modalOverlay').onclick = closeModal;
+
+function openOrderDetailModal(o){
+  const paymentLabel = { cash:'💵 Cash', bkash:'📱 bKash', nagad:'📱 Nagad', card:'💳 Card' }[o.paymentMethod] || '—';
+  openModal(`
+    <div class="modal-close-x" id="modalCloseX">✕</div>
+    <div class="modal-title">Order #${o.id} · ${o.tableLabel}</div>
+    <div class="modal-sub">${new Date(o.placedAt).toLocaleString([], {dateStyle:'medium', timeStyle:'short'})}</div>
+    <div class="od-badge">${STATUS_LABEL[o.status]}</div>
+    ${o.customerName || o.customerPhone ? `
+      <div class="od-row"><span>Customer</span><span>${o.customerName || '—'}</span></div>
+      <div class="od-row"><span>Phone</span><span>${o.customerPhone || '—'}</span></div>
+      <div class="od-row"><span>Payment</span><span>${paymentLabel}</span></div>` : ''}
+    <div style="margin-top:16px;">
+      ${o.items.map(it=>`
+        <div class="od-item">
+          <div class="odi-name">${it.qty}× ${it.name}</div>
+          ${it.mods.length ? `<div class="odi-mods">${it.mods.join(', ')}</div>` : ''}
+        </div>`).join('')}
+    </div>
+    <div class="od-row"><span>Subtotal</span><span>${fmt(o.subtotal)}</span></div>
+    <div class="od-row"><span>Service charge</span><span>${fmt(o.service)}</span></div>
+    <div class="od-row"><span>Tax</span><span>${fmt(o.tax)}</span></div>
+    <div class="od-row" style="font-weight:700;"><span>Total</span><span>${fmt(o.total)}</span></div>
+    ${STATUS_FLOW[o.status] ? `<div class="modal-actions"><button class="modal-cancel" id="modalCancelBtn">Close</button><button class="modal-save" data-advance="${o.id}" id="modalAdvanceBtn">${STATUS_ACTION[o.status]}</button></div>` : `<div class="modal-actions"><button class="modal-cancel" id="modalCancelBtn">Close</button></div>`}
+  `);
+  document.getElementById('modalCloseX').onclick = closeModal;
+  document.getElementById('modalCancelBtn').onclick = closeModal;
+  const advBtn = document.getElementById('modalAdvanceBtn');
+  if(advBtn){
+    advBtn.onclick = ()=>{
+      const newStatus = STATUS_FLOW[o.status];
+      o.status = newStatus;
+      updateOrderStatus(o.id, newStatus);
+      renderAllManagerData();
+      closeModal();
+    };
+  }
+}
+
+function openEditModal({ title, sub, fields, onSave }){
+  const fieldsHtml = fields.map(f=>`
+    <div class="modal-field">
+      <label>${f.label}</label>
+      ${f.type === 'select'
+        ? `<select id="ef-${f.key}">${f.options.map(o=>`<option value="${o.value}" ${o.value===f.value?'selected':''}>${o.label}</option>`).join('')}</select>`
+        : `<input type="${f.type||'text'}" id="ef-${f.key}" value="${(f.value ?? '').toString().replace(/"/g,'&quot;')}">`}
+    </div>`).join('');
+  openModal(`
+    <div class="modal-close-x" id="modalCloseX">✕</div>
+    <div class="modal-title">${title}</div>
+    ${sub ? `<div class="modal-sub">${sub}</div>` : ''}
+    ${fieldsHtml}
+    <div class="modal-actions">
+      <button class="modal-cancel" id="modalCancelBtn">Cancel</button>
+      <button class="modal-save" id="modalSaveBtn">Save</button>
+    </div>
+  `);
+  document.getElementById('modalCloseX').onclick = closeModal;
+  document.getElementById('modalCancelBtn').onclick = closeModal;
+  document.getElementById('modalSaveBtn').onclick = ()=>{
+    const values = {};
+    fields.forEach(f=>{ values[f.key] = document.getElementById('ef-'+f.key).value; });
+    onSave(values);
+    closeModal();
+  };
 }
 
 function renderAllManagerData(){
@@ -1145,7 +1402,8 @@ function renderAllManagerData(){
     : `<div style="color:#8fa3c4;font-size:12px;text-align:center;padding:30px 10px;">Tickets will print here as orders come in.</div>`;
 
   document.querySelectorAll('[data-advance]').forEach(btn=>{
-    btn.onclick = ()=>{
+    btn.onclick = (e)=>{
+      e.stopPropagation();
       const o = ORDERS.find(x=>x.id===parseInt(btn.dataset.advance));
       if(o && STATUS_FLOW[o.status]){
         const newStatus = STATUS_FLOW[o.status];
@@ -1153,6 +1411,12 @@ function renderAllManagerData(){
         renderAllManagerData();
         updateOrderStatus(o.id, newStatus);   // sync the status change back to Supabase
       }
+    };
+  });
+  document.querySelectorAll('.ordercard').forEach(card=>{
+    card.onclick = ()=>{
+      const o = ORDERS.find(x=>x.id===parseInt(card.dataset.orderId));
+      if(o) openOrderDetailModal(o);
     };
   });
   document.querySelectorAll('[data-goto]').forEach(el=>{
@@ -1167,9 +1431,39 @@ function renderMenuTable(){
       <td class="mcat" style="color:var(--ink-soft);">${(CATS.find(c=>c.id===m.cat)||{}).label||m.cat}</td>
       <td>${fmt(m.price)}</td>
       <td><div class="toggle ${m.avail?'on':''}" data-id="${m.id}"><div class="dot"></div></div></td>
-      <td><span class="editbtn">Edit</span></td>
+      <td><span class="editbtn" data-editmenu="${m.id}">Edit</span></td>
     </tr>`).join('');
-  document.querySelectorAll('.toggle').forEach(t=>{ t.onclick = ()=>{ t.classList.toggle('on'); }; });
+  document.querySelectorAll('.toggle').forEach(t=>{
+    t.onclick = ()=>{
+      const m = MENU.find(x=>x.id===t.dataset.id);
+      m.avail = !m.avail;
+      t.classList.toggle('on');
+      renderCustCats();
+      if(viewMode==='grid') renderCustRight();
+    };
+  });
+  document.querySelectorAll('[data-editmenu]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const m = MENU.find(x=>x.id===btn.dataset.editmenu);
+      openEditModal({
+        title: `Edit ${m.name}`,
+        sub: 'Changes apply immediately on the Customer Kiosk.',
+        fields: [
+          { key:'name', label:'Item name', value:m.name },
+          { key:'price', label:'Price (৳)', value:m.price, type:'number' },
+          { key:'cat', label:'Category', type:'select', value:m.cat, options: CATS.map(c=>({value:c.id, label:c.label})) }
+        ],
+        onSave: (v)=>{
+          m.name = v.name.trim() || m.name;
+          m.price = parseInt(v.price) || m.price;
+          m.cat = v.cat;
+          renderMenuTable();
+          renderCustCats();
+          if(viewMode==='grid') renderCustRight();
+        }
+      });
+    };
+  });
   document.getElementById('catChips').innerHTML = CATS.map(c=>`<span class="status-pill" style="background:var(--offwhite-2);color:var(--ink);padding:9px 16px;">${c.label}</span>`).join('');
 }
 function currentKioskBaseUrl(){
@@ -1226,9 +1520,23 @@ document.querySelectorAll('.mgr-navitem').forEach(item=>{
 document.querySelectorAll('.swatch').forEach(s=>{
   s.addEventListener('click', ()=>{ document.querySelectorAll('.swatch').forEach(x=>x.classList.remove('on')); s.classList.add('on'); });
 });
+document.getElementById('editRestName').onclick = ()=>{
+  openEditModal({
+    title: 'Restaurant name',
+    fields: [ { key:'name', label:'Restaurant name', value: restaurantName } ],
+    onSave: (v)=>{ restaurantName = v.name.trim() || restaurantName; applyBranding(); }
+  });
+};
+document.getElementById('editBranch').onclick = ()=>{
+  openEditModal({
+    title: 'Branch',
+    fields: [ { key:'branch', label:'Branch', value: branchName } ],
+    onSave: (v)=>{ branchName = v.branch.trim() || branchName; applyBranding(); }
+  });
+};
 
 /* ============================================================
-   ROUTER — one artifact, two screens, one shared storage bucket
+   ROUTER — one artifact, two screens
    ============================================================ */
 function applyRoute(){
   const isManager = location.hash.replace('#','') === 'manager';
@@ -1243,6 +1551,7 @@ document.getElementById('cartOverlay').onclick = closeCart;
 renderCustCats();
 renderCustRight();
 updateCartCount();
+applyBranding();
 
 renderMenuTable();
 renderQR();
