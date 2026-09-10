@@ -89,6 +89,7 @@
   .grid-card.unavail{opacity:.5;}
   .grid-photo{aspect-ratio:1;border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;}
   .grid-photo svg{width:78%;height:auto;}
+  .grid-photo .dish-photo{width:100%;height:100%;object-fit:cover;}
   .grid-unavail-tag{position:absolute;bottom:8px;left:8px;background:rgba(11,18,32,.75);color:#fff;font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:6px;}
   .grid-name{margin-top:12px;font-weight:700;font-size:14.5px;}
   .grid-price{margin-top:3px;color:var(--ink-soft);font-size:12.5px;}
@@ -98,8 +99,10 @@
   .detail-back{font-size:13px;font-weight:700;color:var(--accent);cursor:pointer;display:inline-flex;align-items:center;gap:6px;margin-bottom:18px;}
   .detail-photo{width:100%;aspect-ratio:16/10;border-radius:22px;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 22px 44px -20px rgba(11,18,32,.28);position:relative;}
   .detail-photo svg{width:52%;height:auto;filter:drop-shadow(0 10px 18px rgba(11,18,32,.18));}
+  .detail-photo .dish-photo{width:100%;height:100%;object-fit:cover;}
   @keyframes pdPulse{0%{transform:scale(1);}50%{transform:scale(1.035);}100%{transform:scale(1);}}
   .detail-photo.pulse svg{animation:pdPulse .32s ease;}
+  .detail-photo.pulse .dish-photo{animation:pdPulse .32s ease;}
   .alayer{opacity:0;transform-origin:120px 120px;transform:translateY(8px) scale(.55);}
   .alayer.on{opacity:1;transform:translateY(0) scale(1);}
   .variant-el{opacity:0;transform-origin:120px 90px;transform:scale(.6);transition:opacity .3s ease, transform .3s cubic-bezier(.34,1.56,.64,1);}
@@ -196,6 +199,7 @@
   .cart-item{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);align-items:center;}
   .ci-thumb{width:52px;height:52px;border-radius:11px;flex-shrink:0;overflow:hidden;background:var(--offwhite-2);display:flex;align-items:center;justify-content:center;}
   .ci-thumb svg{width:82%;height:auto;}
+  .ci-thumb .dish-photo{width:100%;height:100%;object-fit:cover;}
   .ci-info{flex:1;min-width:0;}
   .ci-name{font-size:14px;font-weight:700;}
   .ci-mods{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
@@ -307,6 +311,7 @@
   .mrow-name{display:flex;align-items:center;gap:12px;}
   .mthumb{width:40px;height:40px;border-radius:9px;flex-shrink:0;overflow:hidden;background:var(--offwhite-2);}
   .mthumb svg{width:180%;height:180%;position:relative;left:-40%;top:-30%;}
+  .mthumb .dish-photo{width:100%;height:100%;object-fit:cover;}
   .mname{font-weight:600;}
   .toggle{width:38px;height:22px;border-radius:20px;background:var(--line);position:relative;cursor:pointer;flex-shrink:0;}
   .toggle.on{background:var(--accent);}
@@ -618,44 +623,44 @@ const CATS = [
 ];
 
 const MENU = [
-  {id:1, name:"Chicken Burger", cat:"popular", price:420, art:"burger", tint:"linear-gradient(160deg,#FCEFDA,#F6D9A9)",
+  {id:1, name:"Chicken Burger", cat:"popular", price:420, art:"burger", tint:"linear-gradient(160deg,#FCEFDA,#F6D9A9)", img:"https://images.unsplash.com/photo-1481070555726-e2fe8357725c?q=80&w=800&auto=format&fit=crop",
     desc:"Grilled chicken thigh, lettuce, cheddar and house sauce on a toasted brioche bun.",
     bread:[{n:"Regular bun",p:0},{n:"Sesame bun",p:30}],
     addons:[{key:"cheese",n:"Cheese",p:50},{key:"egg",n:"Fried egg",p:40},{key:"sauce",n:"Extra sauce",p:20}],
     removals:[{key:"no_lettuce",n:"Lettuce"},{key:"no_cheddar",n:"Cheddar"},{key:"no_sauce",n:"House sauce"}], avail:true},
-  {id:2, name:"Truffle Fries", cat:"popular", price:320, art:"fries", tint:"linear-gradient(160deg,#FBF4DC,#F0E0A3)",
+  {id:2, name:"Truffle Fries", cat:"popular", price:320, art:"fries", tint:"linear-gradient(160deg,#FBF4DC,#F0E0A3)", img:"https://images.unsplash.com/photo-1682117650826-881357860ec9?q=80&w=800&auto=format&fit=crop",
     desc:"Hand-cut fries tossed in truffle oil, parmesan and parsley.",
     addons:[{key:"parm",n:"Extra parmesan",p:30},{key:"mayo",n:"Truffle mayo",p:35}],
     removals:[{key:"no_parm",n:"Parmesan"},{key:"no_parsley",n:"Parsley"}], avail:true},
-  {id:3, name:"Beef Steak", cat:"mains", price:1250, art:"steak", tint:"linear-gradient(160deg,#F8E5E0,#EFC8BF)",
+  {id:3, name:"Beef Steak", cat:"mains", price:1250, art:"steak", tint:"linear-gradient(160deg,#F8E5E0,#EFC8BF)", img:"https://images.unsplash.com/photo-1600891964092-4316c288032e?q=80&w=800&auto=format&fit=crop",
     desc:"Grilled beef tenderloin, roasted vegetables and red wine jus.",
     bread:[{n:"Medium rare",p:0},{n:"Medium",p:0},{n:"Well done",p:0}],
     addons:[{key:"pepper",n:"Peppercorn sauce",p:60},{key:"veg",n:"Extra vegetables",p:80}],
     removals:[{key:"no_jus",n:"Red wine jus"},{key:"no_veg",n:"Roasted vegetables"}], avail:true},
-  {id:4, name:"Teriyaki Chicken", cat:"mains", price:560, art:"chicken", tint:"linear-gradient(160deg,#F5F1DC,#EAE0AF)",
+  {id:4, name:"Teriyaki Chicken", cat:"mains", price:560, art:"chicken", tint:"linear-gradient(160deg,#F5F1DC,#EAE0AF)", img:"https://images.unsplash.com/photo-1609183480237-ccbb2d7c5772?q=80&w=800&auto=format&fit=crop",
     desc:"Grilled chicken glazed in teriyaki, steamed rice and pickled greens.",
     addons:[{key:"rice",n:"Extra rice",p:60},{key:"sesame",n:"Sesame seeds",p:15}],
     removals:[{key:"no_greens",n:"Pickled greens"},{key:"no_glaze",n:"Teriyaki glaze"}], avail:true},
-  {id:5, name:"Prawn Tempura", cat:"starters", price:680, art:"tempura", tint:"linear-gradient(160deg,#FDF2DA,#F6E0A2)",
+  {id:5, name:"Prawn Tempura", cat:"starters", price:680, art:"tempura", tint:"linear-gradient(160deg,#FDF2DA,#F6E0A2)", img:"https://images.unsplash.com/photo-1666599207746-0868c6a556d2?q=80&w=800&auto=format&fit=crop",
     desc:"Crisp tempura prawns served with citrus soy dipping sauce.",
     addons:[{key:"prawns",n:"Extra prawns (2pc)",p:150}],
     removals:[{key:"no_sauce2",n:"Citrus soy sauce"}], avail:true},
-  {id:6, name:"Sushi Platter", cat:"sushi", price:890, art:"sushi", tint:"linear-gradient(160deg,#EBF4EB,#D1E7D2)",
+  {id:6, name:"Sushi Platter", cat:"sushi", price:890, art:"sushi", tint:"linear-gradient(160deg,#EBF4EB,#D1E7D2)", img:"https://images.unsplash.com/photo-1553621042-f6e147245754?q=80&w=800&auto=format&fit=crop",
     desc:"Chef's selection of nigiri and maki rolls, 12 pieces.",
     addons:[{key:"wasabi",n:"Extra wasabi",p:0},{key:"ginger",n:"Extra ginger",p:0},{key:"spicymayo",n:"Spicy mayo",p:20}],
     removals:[{key:"no_wasabi",n:"Wasabi"},{key:"no_ginger",n:"Pickled ginger"}], avail:true},
-  {id:7, name:"Ramen", cat:"sushi", price:490, art:"ramen", tint:"linear-gradient(160deg,#FCEADA,#F4C89C)",
+  {id:7, name:"Ramen", cat:"sushi", price:490, art:"ramen", tint:"linear-gradient(160deg,#FCEADA,#F4C89C)", img:"https://images.unsplash.com/photo-1526318896980-cf78c088247c?q=80&w=800&auto=format&fit=crop",
     desc:"Rich pork tonkotsu broth, chashu, soft egg, scallion, nori.",
     addons:[{key:"chashu",n:"Extra chashu",p:90},{key:"eggr",n:"Extra egg",p:40},{key:"spicyoil",n:"Spicy oil",p:15}],
     removals:[{key:"no_scallion",n:"Scallion"},{key:"no_nori",n:"Nori"},{key:"no_egg",n:"Soft egg"}], avail:false},
-  {id:8, name:"Matcha Latte", cat:"drinks", price:310, art:"latte", tint:"linear-gradient(160deg,#EBF4E8,#D0E4C9)",
+  {id:8, name:"Matcha Latte", cat:"drinks", price:310, art:"latte", tint:"linear-gradient(160deg,#EBF4E8,#D0E4C9)", img:"https://images.unsplash.com/photo-1560148196-df61132466ce?q=80&w=800&auto=format&fit=crop",
     desc:"Ceremonial grade matcha whisked with steamed milk.",
     bread:[{n:"Regular",p:0},{n:"Oat milk",p:40}], avail:true},
-  {id:9, name:"Cold Coffee", cat:"drinks", price:280, art:"coffee", tint:"linear-gradient(160deg,#F0E4D9,#D9C5AF)",
+  {id:9, name:"Cold Coffee", cat:"drinks", price:280, art:"coffee", tint:"linear-gradient(160deg,#F0E4D9,#D9C5AF)", img:"https://images.unsplash.com/photo-1471922597728-92f81bfe2445?q=80&w=800&auto=format&fit=crop",
     desc:"Slow-brewed cold coffee with a touch of house syrup.",
     bread:[{n:"Regular",p:0},{n:"Oat milk",p:40}],
     removals:[{key:"no_syrup",n:"House syrup"}], avail:true},
-  {id:10, name:"Chocolate Cake", cat:"desserts", price:390, art:"cake", tint:"linear-gradient(160deg,#F4E4DF,#E4C1B5)",
+  {id:10, name:"Chocolate Cake", cat:"desserts", price:390, art:"cake", tint:"linear-gradient(160deg,#F4E4DF,#E4C1B5)", img:"https://images.unsplash.com/photo-1517427294546-5aa121f68e8a?q=80&w=800&auto=format&fit=crop",
     desc:"Dark chocolate layer cake with a molten center.",
     addons:[{key:"icecream",n:"Vanilla ice cream",p:60}], avail:true},
 ];
@@ -993,7 +998,7 @@ function renderGridView(){
         ${items.map(m=>`
           <div class="grid-card ${!m.avail?'unavail':''}" data-id="${m.id}">
             <div class="grid-photo" style="background:${m.tint}">
-              ${buildIllustration(m)}
+              <img class="dish-photo" src="${m.img}" alt="${m.name}" loading="lazy">
               ${!m.avail?'<div class="grid-unavail-tag">Unavailable</div>':''}
             </div>
             <div class="grid-name">${m.name}</div>
@@ -1013,7 +1018,7 @@ function renderDetailView(){
   document.getElementById('custRight').innerHTML = `
     <div class="detail-view">
       <div class="detail-back" id="detailBack">← Menu</div>
-      <div class="detail-photo" id="custPhoto" style="background:${m.tint}">${buildIllustration(m)}</div>
+      <div class="detail-photo" id="custPhoto" style="background:${m.tint}"><img class="dish-photo" src="${m.img}" alt="${m.name}"></div>
       <div class="detail-cat-label">${catLabel}</div>
       <div class="detail-title">${m.name}</div>
       <div class="detail-desc-label">What it's made of</div>
@@ -1116,7 +1121,7 @@ function addToCart(){
   const removalNames = m.removals ? m.removals.filter(r=>pdState.removals[r.key]).map(r=>'No '+r.n) : [];
   const breadName = m.bread ? m.bread[pdState.breadIdx].n : null;
   const unitPrice = pdTotal()/pdState.qty;
-  cart.push({ menuId:m.id, name:m.name, art:m.art, tint:m.tint, bread:breadName, addons:addonNames, removals:removalNames, qty:pdState.qty, unitPrice });
+  cart.push({ menuId:m.id, name:m.name, art:m.art, tint:m.tint, img:m.img, bread:breadName, addons:addonNames, removals:removalNames, qty:pdState.qty, unitPrice });
   updateCartCount();
   pulsePhoto();
 
@@ -1161,7 +1166,7 @@ function renderCartDrawer(){
     <div class="cart-drawer-body" id="cartBody">
       ${cart.map((it,idx)=>`
         <div class="cart-item">
-          <div class="ci-thumb" style="background:${it.tint||'var(--offwhite-2)'}">${buildIllustration({art:it.art})}</div>
+          <div class="ci-thumb" style="background:${it.tint||'var(--offwhite-2)'}"><img class="dish-photo" src="${it.img}" alt="${it.name}"></div>
           <div class="ci-info">
             <div class="ci-name">${it.name}</div>
             <div class="ci-mods">${[it.bread,...it.addons,...it.removals].filter(Boolean).join(', ')||'No modifications'}</div>
@@ -1427,7 +1432,7 @@ function renderAllManagerData(){
 function renderMenuTable(){
   document.getElementById('menuTbody').innerHTML = MENU.map(m=>`
     <tr>
-      <td><div class="mrow-name"><div class="mthumb">${buildIllustration(m)}</div><div class="mname">${m.name}</div></div></td>
+      <td><div class="mrow-name"><div class="mthumb"><img class="dish-photo" src="${m.img}" alt="${m.name}"></div><div class="mname">${m.name}</div></div></td>
       <td class="mcat" style="color:var(--ink-soft);">${(CATS.find(c=>c.id===m.cat)||{}).label||m.cat}</td>
       <td>${fmt(m.price)}</td>
       <td><div class="toggle ${m.avail?'on':''}" data-id="${m.id}"><div class="dot"></div></div></td>
