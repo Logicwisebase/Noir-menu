@@ -103,6 +103,9 @@
   @keyframes pdPulse{0%{transform:scale(1);}50%{transform:scale(1.035);}100%{transform:scale(1);}}
   .detail-photo.pulse svg{animation:pdPulse .32s ease;}
   .detail-photo.pulse .dish-photo{animation:pdPulse .32s ease;}
+  .photo-badges{position:absolute;left:14px;right:14px;bottom:14px;display:flex;flex-wrap:wrap;gap:6px;}
+  .photo-badge{background:rgba(255,255,255,.94);color:var(--ink);font-size:11.5px;font-weight:700;padding:6px 12px;border-radius:20px;box-shadow:0 6px 14px -6px rgba(11,18,32,.3);animation:badgePop .3s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes badgePop{from{transform:scale(.5);opacity:0;}to{transform:scale(1);opacity:1;}}
   .alayer{opacity:0;transform-origin:120px 120px;transform:translateY(8px) scale(.55);}
   .alayer.on{opacity:1;transform:translateY(0) scale(1);}
   .variant-el{opacity:0;transform-origin:120px 90px;transform:scale(.6);transition:opacity .3s ease, transform .3s cubic-bezier(.34,1.56,.64,1);}
@@ -252,6 +255,17 @@
   .mgr-navitem.on{background:rgba(78,110,232,.18);color:#fff;}
   .mgr-navitem:hover{color:#fff;}
   .mgr-navitem .badge{margin-left:auto;background:var(--accent);color:#fff;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:20px;min-width:16px;text-align:center;}
+  .mgr-navitem .premium-tag{margin-left:auto;color:#E8B84B;font-size:12px;}
+  .premium-badge{display:inline-block;font-size:10.5px;font-weight:700;padding:3px 10px;border-radius:20px;background:linear-gradient(120deg,#3a2f0f,#5c4a1a);color:#E8B84B;margin-left:8px;vertical-align:middle;}
+  .pnl-period-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .pnl-period-btn{border:1px solid var(--line);border-radius:9px;padding:9px 16px;font-size:12.5px;font-weight:600;background:#fff;color:var(--ink);}
+  .pnl-period-btn.on{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .pnl-sub{font-size:12.5px;color:var(--ink-soft);margin-top:12px;font-weight:600;}
+  .pnl-table{width:100%;border-collapse:collapse;}
+  .pnl-table td{padding:11px 4px;border-bottom:1px solid var(--line);font-size:14px;}
+  .pnl-table td:last-child{text-align:right;font-weight:600;}
+  .pnl-table tr.pnl-total-row td{font-weight:800;font-size:15.5px;border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);}
+  .pnl-note{font-size:11.5px;color:var(--ink-soft);margin-top:14px;line-height:1.5;}
   .mgr-side-bottom{margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,.08);}
   .mgr-planbadge{background:rgba(78,110,232,.16);border:1px solid rgba(78,110,232,.3);border-radius:10px;padding:12px;font-size:11.5px;color:#B7C4FF;margin-bottom:10px;}
   .mgr-tocust{display:block;text-align:center;font-size:12px;font-weight:600;color:rgba(246,243,234,.65);padding:9px;border-radius:8px;border:1px solid rgba(255,255,255,.14);}
@@ -469,6 +483,7 @@
       <div class="mgr-navitem" data-view="mgr-customers"><span>👤</span><span>Customers</span></div>
       <div class="mgr-navitem" data-view="mgr-qr"><span>▦</span><span>QR Codes</span></div>
       <div class="mgr-navitem" data-view="mgr-analytics"><span>📈</span><span>Analytics</span></div>
+      <div class="mgr-navitem" data-view="mgr-pnl"><span>💹</span><span>P&amp;L</span><span class="premium-tag">✦</span></div>
       <div class="mgr-navitem" data-view="mgr-settings"><span>⚙️</span><span>Settings</span></div>
       <div class="mgr-side-bottom">
         <div class="mgr-planbadge">Logicwise Order plan<br>Renews Sep 30, 2026</div>
@@ -573,6 +588,34 @@
             <div class="barrow"><span class="lbl">7 PM – 9 PM</span><div class="bar"><i style="width:100%"></i></div><span class="val">100%</span></div>
             <div class="barrow"><span class="lbl">9 PM – 11 PM</span><div class="bar"><i style="width:54%"></i></div><span class="val">54%</span></div>
           </div>
+        </div>
+      </div>
+
+      <div class="mgr-view" id="mgr-pnl">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Statement of Profit &amp; Loss <span class="premium-badge">✦ Premium</span></div>
+          </div>
+          <div class="qr-baseurl-hint" style="margin-bottom:14px;">Available on the Premium plan. Choose a reporting period below — the statement and chart update to match.</div>
+          <div class="pnl-period-row" id="pnlPeriodRow">
+            <button class="pnl-period-btn on" data-period="daily">Daily</button>
+            <button class="pnl-period-btn" data-period="monthly">Monthly</button>
+            <button class="pnl-period-btn" data-period="quarterly">Quarterly</button>
+            <button class="pnl-period-btn" data-period="halfyearly">Half-Yearly</button>
+            <button class="pnl-period-btn" data-period="yearly">Yearly</button>
+          </div>
+          <div class="pnl-sub" id="pnlRangeLabel"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Statement</div></div>
+          <table class="pnl-table" id="pnlTable"></table>
+          <div class="pnl-note">Reflects revenue collected through NOIR only (no expenses or cost of goods entered) — this is a sales statement, not a full net-profit P&amp;L.</div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Revenue trend</div></div>
+          <div id="pnlChart"></div>
         </div>
       </div>
 
@@ -857,6 +900,7 @@ async function loadAndRenderOrders(){
   // if the fetch fails (offline, misconfigured keys, etc.) we just keep showing whatever we last had
   renderAllManagerData();
   renderCustomers();
+  renderPnl(currentPnlPeriod);
 }
 
 /* ---------- customer database (repeat visitors + reward eligibility) ---------- */
@@ -1018,7 +1062,10 @@ function renderDetailView(){
   document.getElementById('custRight').innerHTML = `
     <div class="detail-view">
       <div class="detail-back" id="detailBack">← Menu</div>
-      <div class="detail-photo" id="custPhoto" style="background:${m.tint}"><img class="dish-photo" src="${m.img}" alt="${m.name}"></div>
+      <div class="detail-photo" id="custPhoto" style="background:${m.tint}">
+        <img class="dish-photo" src="${m.img}" alt="${m.name}">
+        <div class="photo-badges" id="photoBadges"></div>
+      </div>
       <div class="detail-cat-label">${catLabel}</div>
       <div class="detail-title">${m.name}</div>
       <div class="detail-desc-label">What it's made of</div>
@@ -1036,6 +1083,16 @@ function renderDetailView(){
   document.getElementById('qtyPlus').onclick = ()=>{ pdState.qty += 1; updateCustHeader(); pulsePhoto(); };
   document.getElementById('addToCartBtn').onclick = addToCart;
   renderCustOptions();
+  renderPhotoBadges();
+}
+function renderPhotoBadges(){
+  const m = pdState.m;
+  const badges = [];
+  if(m.bread && pdState.breadIdx !== 0) badges.push(m.bread[pdState.breadIdx].n);
+  if(m.addons) m.addons.forEach(a=>{ if(pdState.addons[a.key]) badges.push('+ '+a.n); });
+  if(m.removals) m.removals.forEach(r=>{ if(pdState.removals[r.key]) badges.push('No '+r.n); });
+  const el = document.getElementById('photoBadges');
+  if(el) el.innerHTML = badges.map(b=>`<span class="photo-badge">${b}</span>`).join('');
 }
 function pdTotal(){
   const m = pdState.m; let t = m.price;
@@ -1097,21 +1154,21 @@ function renderCustOptions(){
     node.onclick = ()=>{
       pdState.breadIdx = parseInt(node.dataset.bread);
       syncVariant(document.getElementById('custPhoto'), pdState.breadIdx, pdState.m.art);
-      renderCustOptions(); updateCustHeader();
+      renderCustOptions(); updateCustHeader(); renderPhotoBadges(); pulsePhoto();
     };
   });
   document.querySelectorAll('[data-addon]').forEach(node=>{
     node.onclick = ()=>{
       const key = node.dataset.addon;
       pdState.addons[key] = !pdState.addons[key];
-      renderCustOptions(); updateCustHeader();
+      renderCustOptions(); updateCustHeader(); renderPhotoBadges(); pulsePhoto();
     };
   });
   document.querySelectorAll('[data-remove]').forEach(node=>{
     node.onclick = ()=>{
       const key = node.dataset.remove;
       pdState.removals[key] = !pdState.removals[key];
-      renderCustOptions(); updateCustHeader();
+      renderCustOptions(); updateCustHeader(); renderPhotoBadges(); pulsePhoto();
     };
   });
 }
@@ -1471,6 +1528,121 @@ function renderMenuTable(){
   });
   document.getElementById('catChips').innerHTML = CATS.map(c=>`<span class="status-pill" style="background:var(--offwhite-2);color:var(--ink);padding:9px 16px;">${c.label}</span>`).join('');
 }
+/* ============================================================
+   STATEMENT OF PROFIT & LOSS (Premium feature)
+   ============================================================ */
+let currentPnlPeriod = 'daily';
+
+function getPeriodRange(period){
+  const now = new Date();
+  let start, end, label;
+  if(period === 'daily'){
+    start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    end = new Date(start.getFullYear(), start.getMonth(), start.getDate()+1);
+    label = start.toLocaleDateString([], {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+  }else if(period === 'monthly'){
+    start = new Date(now.getFullYear(), now.getMonth(), 1);
+    end = new Date(now.getFullYear(), now.getMonth()+1, 1);
+    label = start.toLocaleDateString([], {month:'long', year:'numeric'});
+  }else if(period === 'quarterly'){
+    const q = Math.floor(now.getMonth()/3);
+    start = new Date(now.getFullYear(), q*3, 1);
+    end = new Date(now.getFullYear(), q*3+3, 1);
+    label = `Q${q+1} ${now.getFullYear()}`;
+  }else if(period === 'halfyearly'){
+    const h = now.getMonth() < 6 ? 0 : 1;
+    start = new Date(now.getFullYear(), h*6, 1);
+    end = new Date(now.getFullYear(), h*6+6, 1);
+    label = (h===0 ? 'H1 (Jan–Jun) ' : 'H2 (Jul–Dec) ') + now.getFullYear();
+  }else{ // yearly
+    start = new Date(now.getFullYear(), 0, 1);
+    end = new Date(now.getFullYear()+1, 0, 1);
+    label = String(now.getFullYear());
+  }
+  return { start, end, label };
+}
+
+function computePnl(period){
+  const { start, end, label } = getPeriodRange(period);
+  const filtered = ORDERS.filter(o=>o.placedAt >= start.getTime() && o.placedAt < end.getTime());
+  const grossSales = filtered.reduce((s,o)=>s+o.subtotal, 0);
+  const serviceCharge = filtered.reduce((s,o)=>s+o.service, 0);
+  const taxCollected = filtered.reduce((s,o)=>s+o.tax, 0);
+  const totalRevenue = filtered.reduce((s,o)=>s+o.total, 0);
+  const orderCount = filtered.length;
+  const avgOrderValue = orderCount ? Math.round(totalRevenue/orderCount) : 0;
+  return { label, filtered, start, end, grossSales, serviceCharge, taxCollected, totalRevenue, orderCount, avgOrderValue };
+}
+
+function renderPnlTable(data){
+  document.getElementById('pnlRangeLabel').textContent = data.label;
+  document.getElementById('pnlTable').innerHTML = `
+    <tr><td>Gross food &amp; drink sales</td><td>${fmt(data.grossSales)}</td></tr>
+    <tr><td>Service charge collected</td><td>${fmt(data.serviceCharge)}</td></tr>
+    <tr><td>Tax collected</td><td>${fmt(data.taxCollected)}</td></tr>
+    <tr class="pnl-total-row"><td>Total revenue</td><td>${fmt(data.totalRevenue)}</td></tr>
+    <tr><td>Orders in period</td><td>${data.orderCount}</td></tr>
+    <tr><td>Average order value</td><td>${fmt(data.avgOrderValue)}</td></tr>
+  `;
+}
+
+function getPnlBuckets(period, filtered, start, end){
+  let buckets = [];
+  if(period === 'daily'){
+    buckets = Array.from({length:24}, (_,h)=>({ label: h+':00', value:0 }));
+    filtered.forEach(o=>{ const h = new Date(o.placedAt).getHours(); buckets[h].value += o.total; });
+  }else if(period === 'monthly'){
+    const dayCount = Math.round((end - start) / 86400000);
+    buckets = Array.from({length:dayCount}, (_,d)=>({ label: String(d+1), value:0 }));
+    filtered.forEach(o=>{ const d = Math.floor((o.placedAt - start.getTime()) / 86400000); if(buckets[d]) buckets[d].value += o.total; });
+  }else{ // quarterly, halfyearly, yearly -> monthly buckets
+    const startIdx = start.getFullYear()*12 + start.getMonth();
+    const endIdx = end.getFullYear()*12 + end.getMonth();
+    buckets = Array.from({length:endIdx-startIdx}, (_,i)=>{
+      const d = new Date(start.getFullYear(), start.getMonth()+i, 1);
+      return { label: d.toLocaleDateString([], {month:'short'}), value:0 };
+    });
+    filtered.forEach(o=>{
+      const od = new Date(o.placedAt);
+      const idx = (od.getFullYear()*12 + od.getMonth()) - startIdx;
+      if(buckets[idx]) buckets[idx].value += o.total;
+    });
+  }
+  return buckets;
+}
+
+function renderPnlChart(buckets){
+  const max = Math.max(1, ...buckets.map(b=>b.value));
+  const w = 720, h = 220, padB = 26;
+  const barGap = 4;
+  const barW = Math.max(2, (w / buckets.length) - barGap);
+  const showEvery = Math.max(1, Math.ceil(buckets.length / 12));
+  const bars = buckets.map((b,i)=>{
+    const barH = Math.round((b.value/max) * (h-padB-14));
+    const x = i*(barW+barGap);
+    const y = h - padB - barH;
+    const label = i % showEvery === 0 ? `<text x="${x+barW/2}" y="${h-8}" font-size="9" fill="var(--ink-soft)" text-anchor="middle">${b.label}</text>` : '';
+    return `<rect x="${x}" y="${y}" width="${barW}" height="${Math.max(barH,1)}" rx="2" fill="var(--accent)"></rect>${label}`;
+  }).join('');
+  document.getElementById('pnlChart').innerHTML = buckets.some(b=>b.value>0)
+    ? `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;">${bars}</svg>`
+    : `<div class="noorders">No revenue in this period yet.</div>`;
+}
+
+function renderPnl(period){
+  currentPnlPeriod = period;
+  const data = computePnl(period);
+  renderPnlTable(data);
+  renderPnlChart(getPnlBuckets(period, data.filtered, data.start, data.end));
+}
+document.querySelectorAll('.pnl-period-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    document.querySelectorAll('.pnl-period-btn').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+    renderPnl(btn.dataset.period);
+  };
+});
+
 function currentKioskBaseUrl(){
   const input = document.getElementById('qrBaseUrl');
   const v = input && input.value.trim();
