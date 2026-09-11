@@ -106,6 +106,7 @@
   .photo-badges{position:absolute;left:14px;right:14px;bottom:14px;display:flex;flex-wrap:wrap;gap:6px;}
   .photo-badge{background:rgba(255,255,255,.94);color:var(--ink);font-size:11.5px;font-weight:700;padding:6px 12px;border-radius:20px;box-shadow:0 6px 14px -6px rgba(11,18,32,.3);animation:badgePop .3s cubic-bezier(.34,1.56,.64,1);}
   @keyframes badgePop{from{transform:scale(.5);opacity:0;}to{transform:scale(1);opacity:1;}}
+  .dish-photo-fallback{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:22px;background:var(--offwhite-2);color:var(--ink-soft);}
   .alayer{opacity:0;transform-origin:120px 120px;transform:translateY(8px) scale(.55);}
   .alayer.on{opacity:1;transform:translateY(0) scale(1);}
   .variant-el{opacity:0;transform-origin:120px 90px;transform:scale(.6);transition:opacity .3s ease, transform .3s cubic-bezier(.34,1.56,.64,1);}
@@ -265,6 +266,8 @@
   .pnl-table td{padding:11px 4px;border-bottom:1px solid var(--line);font-size:14px;}
   .pnl-table td:last-child{text-align:right;font-weight:600;}
   .pnl-table tr.pnl-total-row td{font-weight:800;font-size:15.5px;border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);}
+  .pnl-table tr.pnl-subtotal-row td{font-weight:700;border-top:1.5px solid var(--ink);}
+  .pnl-table tr.pnl-expense-row td{color:var(--red);}
   .pnl-note{font-size:11.5px;color:var(--ink-soft);margin-top:14px;line-height:1.5;}
   .mgr-side-bottom{margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,.08);}
   .mgr-planbadge{background:rgba(78,110,232,.16);border:1px solid rgba(78,110,232,.3);border-radius:10px;padding:12px;font-size:11.5px;color:#B7C4FF;margin-bottom:10px;}
@@ -532,14 +535,14 @@
 
       <div class="mgr-view" id="mgr-menu">
         <div class="panel">
-          <div class="panel-head"><div class="panel-title">Menu items</div><button class="addproductbtn">+ Add product</button></div>
+          <div class="panel-head"><div class="panel-title">Menu items</div><button class="addproductbtn" id="addProductBtn">+ Add product</button></div>
           <table class="mtable">
             <thead><tr><th>Item</th><th>Category</th><th>Price</th><th>Available</th><th></th></tr></thead>
             <tbody id="menuTbody"></tbody>
           </table>
         </div>
         <div class="panel">
-          <div class="panel-head"><div class="panel-title">Categories</div><button class="addproductbtn">+ Add category</button></div>
+          <div class="panel-head"><div class="panel-title">Categories</div><button class="addproductbtn" id="addCategoryBtn">+ Add category</button></div>
           <div style="display:flex;flex-wrap:wrap;gap:10px;" id="catChips"></div>
         </div>
       </div>
@@ -610,7 +613,15 @@
         <div class="panel">
           <div class="panel-head"><div class="panel-title">Statement</div></div>
           <table class="pnl-table" id="pnlTable"></table>
-          <div class="pnl-note">Reflects revenue collected through NOIR only (no expenses or cost of goods entered) — this is a sales statement, not a full net-profit P&amp;L.</div>
+          <div class="pnl-note">Revenue is pulled automatically from orders. Expenses below are logged manually, so net profit is only as accurate as what's been entered.</div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Expenses in period</div><button class="abtn primary" id="addExpenseBtn">+ Add Expense</button></div>
+          <table class="custtable" id="expenseTableEl">
+            <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th></th></tr></thead>
+            <tbody id="expenseTbody"></tbody>
+          </table>
         </div>
 
         <div class="panel">
@@ -655,6 +666,11 @@
    they're real and shared across every device.
    ============================================================ */
 function fmt(n){ return "৳"+n.toLocaleString(); }
+function dishImgHtml(url, alt){
+  return url
+    ? `<img class="dish-photo" src="${url}" alt="${(alt||'').replace(/"/g,'&quot;')}" loading="lazy">`
+    : `<div class="dish-photo-fallback">🍽️</div>`;
+}
 
 const CATS = [
   {id:"popular", label:"Popular"},
@@ -667,6 +683,7 @@ const CATS = [
 
 const MENU = [
   {id:1, name:"Chicken Burger", cat:"popular", price:420, art:"burger", tint:"linear-gradient(160deg,#FCEFDA,#F6D9A9)", img:"https://images.unsplash.com/photo-1481070555726-e2fe8357725c?q=80&w=800&auto=format&fit=crop",
+    breadImg:["https://images.unsplash.com/photo-1481070555726-e2fe8357725c?q=80&w=800&auto=format&fit=crop","https://images.unsplash.com/photo-1667329829058-ac191ba4a905?q=80&w=800&auto=format&fit=crop"],
     desc:"Grilled chicken thigh, lettuce, cheddar and house sauce on a toasted brioche bun.",
     bread:[{n:"Regular bun",p:0},{n:"Sesame bun",p:30}],
     addons:[{key:"cheese",n:"Cheese",p:50},{key:"egg",n:"Fried egg",p:40},{key:"sauce",n:"Extra sauce",p:20}],
@@ -676,6 +693,7 @@ const MENU = [
     addons:[{key:"parm",n:"Extra parmesan",p:30},{key:"mayo",n:"Truffle mayo",p:35}],
     removals:[{key:"no_parm",n:"Parmesan"},{key:"no_parsley",n:"Parsley"}], avail:true},
   {id:3, name:"Beef Steak", cat:"mains", price:1250, art:"steak", tint:"linear-gradient(160deg,#F8E5E0,#EFC8BF)", img:"https://images.unsplash.com/photo-1600891964092-4316c288032e?q=80&w=800&auto=format&fit=crop",
+    breadImg:["https://images.unsplash.com/photo-1504973960431-1c467e159aa4?q=80&w=800&auto=format&fit=crop","https://images.unsplash.com/photo-1600891964092-4316c288032e?q=80&w=800&auto=format&fit=crop","https://images.unsplash.com/photo-1568046097340-56eb1e93bc1e?q=80&w=800&auto=format&fit=crop"],
     desc:"Grilled beef tenderloin, roasted vegetables and red wine jus.",
     bread:[{n:"Medium rare",p:0},{n:"Medium",p:0},{n:"Well done",p:0}],
     addons:[{key:"pepper",n:"Peppercorn sauce",p:60},{key:"veg",n:"Extra vegetables",p:80}],
@@ -711,6 +729,7 @@ const MENU = [
 const OPT_COLORS = ['#4E6EE8','#C77B6E','#8FAE8B','#C6A15B','#B08FC2','#7FA0B0'];
 
 let ORDERS = [];     // shared "live" orders — read by Manager Screen
+let EXPENSES = [];   // shared expenses — for the P&L Premium feature
 let orderCounter = 100;
 
 /* ---------- illustrations (shared by both views) ---------- */
@@ -842,6 +861,7 @@ const SUPABASE_URL = 'https://rzkkhltqbjxlkfrbgpsf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_-pJrMR34fNQrAQ9RrogaUg_dKzZXLco';
 const ORDERS_TABLE = 'Orders';       // matches the table name exactly as created in Supabase
 const CUSTOMERS_TABLE = 'Customers'; // create this table too — see the setup instructions
+const EXPENSES_TABLE = 'Expenses';   // for the P&L Premium feature — see the setup instructions
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -897,7 +917,9 @@ async function updateOrderStatus(id, status){
 async function loadAndRenderOrders(){
   const orders = await fetchAllOrders();
   if(orders !== null){ ORDERS = orders; }
-  // if the fetch fails (offline, misconfigured keys, etc.) we just keep showing whatever we last had
+  const expenses = await fetchAllExpenses();
+  if(expenses !== null){ EXPENSES = expenses; }
+  // if a fetch fails (offline, misconfigured keys, etc.) we just keep showing whatever we last had
   renderAllManagerData();
   renderCustomers();
   renderPnl(currentPnlPeriod);
@@ -948,6 +970,28 @@ async function renderCustomers(){
       <td>${fmt(c.total_spent||0)}</td>
       <td>${c.last_visit ? timeAgo(new Date(c.last_visit).getTime()) : '—'}</td>
     </tr>`).join('');
+}
+
+/* ---------- expenses (for the P&L Premium feature) ---------- */
+async function fetchAllExpenses(){
+  const { data, error } = await sb.from(EXPENSES_TABLE).select('*').order('expense_date', { ascending:false });
+  if(error){ console.error('NOIR: could not load expenses', error); return null; }
+  return data || [];
+}
+async function insertExpense(input){
+  const { error } = await sb.from(EXPENSES_TABLE).insert([{
+    category: input.category,
+    description: input.description || null,
+    amount: input.amount,
+    expense_date: input.expense_date
+  }]);
+  if(error){ console.error('NOIR: could not save expense', error); return false; }
+  return true;
+}
+async function deleteExpense(id){
+  const { error } = await sb.from(EXPENSES_TABLE).delete().eq('id', id);
+  if(error){ console.error('NOIR: could not delete expense', error); return false; }
+  return true;
 }
 
 /* ============================================================
@@ -1042,7 +1086,7 @@ function renderGridView(){
         ${items.map(m=>`
           <div class="grid-card ${!m.avail?'unavail':''}" data-id="${m.id}">
             <div class="grid-photo" style="background:${m.tint}">
-              <img class="dish-photo" src="${m.img}" alt="${m.name}" loading="lazy">
+              ${dishImgHtml(m.img, m.name)}
               ${!m.avail?'<div class="grid-unavail-tag">Unavailable</div>':''}
             </div>
             <div class="grid-name">${m.name}</div>
@@ -1063,7 +1107,7 @@ function renderDetailView(){
     <div class="detail-view">
       <div class="detail-back" id="detailBack">← Menu</div>
       <div class="detail-photo" id="custPhoto" style="background:${m.tint}">
-        <img class="dish-photo" src="${m.img}" alt="${m.name}">
+        ${dishImgHtml((m.breadImg && m.breadImg[pdState.breadIdx]) || m.img, m.name)}
         <div class="photo-badges" id="photoBadges"></div>
       </div>
       <div class="detail-cat-label">${catLabel}</div>
@@ -1084,6 +1128,12 @@ function renderDetailView(){
   document.getElementById('addToCartBtn').onclick = addToCart;
   renderCustOptions();
   renderPhotoBadges();
+}
+function updateDetailPhoto(){
+  const m = pdState.m;
+  const src = (m.breadImg && m.breadImg[pdState.breadIdx]) || m.img;
+  const imgEl = document.querySelector('#custPhoto .dish-photo');
+  if(imgEl) imgEl.src = src;
 }
 function renderPhotoBadges(){
   const m = pdState.m;
@@ -1153,7 +1203,7 @@ function renderCustOptions(){
   document.querySelectorAll('[data-bread]').forEach(node=>{
     node.onclick = ()=>{
       pdState.breadIdx = parseInt(node.dataset.bread);
-      syncVariant(document.getElementById('custPhoto'), pdState.breadIdx, pdState.m.art);
+      updateDetailPhoto();
       renderCustOptions(); updateCustHeader(); renderPhotoBadges(); pulsePhoto();
     };
   });
@@ -1223,7 +1273,7 @@ function renderCartDrawer(){
     <div class="cart-drawer-body" id="cartBody">
       ${cart.map((it,idx)=>`
         <div class="cart-item">
-          <div class="ci-thumb" style="background:${it.tint||'var(--offwhite-2)'}"><img class="dish-photo" src="${it.img}" alt="${it.name}"></div>
+          <div class="ci-thumb" style="background:${it.tint||'var(--offwhite-2)'}">${dishImgHtml(it.img, it.name)}</div>
           <div class="ci-info">
             <div class="ci-name">${it.name}</div>
             <div class="ci-mods">${[it.bread,...it.addons,...it.removals].filter(Boolean).join(', ')||'No modifications'}</div>
@@ -1489,7 +1539,7 @@ function renderAllManagerData(){
 function renderMenuTable(){
   document.getElementById('menuTbody').innerHTML = MENU.map(m=>`
     <tr>
-      <td><div class="mrow-name"><div class="mthumb"><img class="dish-photo" src="${m.img}" alt="${m.name}"></div><div class="mname">${m.name}</div></div></td>
+      <td><div class="mrow-name"><div class="mthumb">${dishImgHtml(m.img, m.name)}</div><div class="mname">${m.name}</div></div></td>
       <td class="mcat" style="color:var(--ink-soft);">${(CATS.find(c=>c.id===m.cat)||{}).label||m.cat}</td>
       <td>${fmt(m.price)}</td>
       <td><div class="toggle ${m.avail?'on':''}" data-id="${m.id}"><div class="dot"></div></div></td>
@@ -1497,7 +1547,7 @@ function renderMenuTable(){
     </tr>`).join('');
   document.querySelectorAll('.toggle').forEach(t=>{
     t.onclick = ()=>{
-      const m = MENU.find(x=>x.id===t.dataset.id);
+      const m = MENU.find(x=>x.id===parseInt(t.dataset.id));
       m.avail = !m.avail;
       t.classList.toggle('on');
       renderCustCats();
@@ -1506,19 +1556,23 @@ function renderMenuTable(){
   });
   document.querySelectorAll('[data-editmenu]').forEach(btn=>{
     btn.onclick = ()=>{
-      const m = MENU.find(x=>x.id===btn.dataset.editmenu);
+      const m = MENU.find(x=>x.id===parseInt(btn.dataset.editmenu));
       openEditModal({
         title: `Edit ${m.name}`,
         sub: 'Changes apply immediately on the Customer Kiosk.',
         fields: [
           { key:'name', label:'Item name', value:m.name },
+          { key:'desc', label:'Description', value:m.desc || '' },
           { key:'price', label:'Price (৳)', value:m.price, type:'number' },
-          { key:'cat', label:'Category', type:'select', value:m.cat, options: CATS.map(c=>({value:c.id, label:c.label})) }
+          { key:'cat', label:'Category', type:'select', value:m.cat, options: CATS.map(c=>({value:c.id, label:c.label})) },
+          { key:'img', label:'Photo URL', value:m.img || '' }
         ],
         onSave: (v)=>{
           m.name = v.name.trim() || m.name;
+          m.desc = v.desc.trim();
           m.price = parseInt(v.price) || m.price;
           m.cat = v.cat;
+          m.img = v.img.trim() || m.img;
           renderMenuTable();
           renderCustCats();
           if(viewMode==='grid') renderCustRight();
@@ -1528,6 +1582,49 @@ function renderMenuTable(){
   });
   document.getElementById('catChips').innerHTML = CATS.map(c=>`<span class="status-pill" style="background:var(--offwhite-2);color:var(--ink);padding:9px 16px;">${c.label}</span>`).join('');
 }
+document.getElementById('addProductBtn').onclick = ()=>{
+  openEditModal({
+    title: 'Add menu item',
+    sub: 'It appears on the Customer Kiosk right away, marked available.',
+    fields: [
+      { key:'name', label:'Item name', value:'' },
+      { key:'cat', label:'Category', type:'select', value:CATS[0].id, options: CATS.map(c=>({value:c.id, label:c.label})) },
+      { key:'price', label:'Price (৳)', value:'', type:'number' },
+      { key:'desc', label:'Description', value:'' },
+      { key:'img', label:'Photo URL (optional)', value:'' }
+    ],
+    onSave: (v)=>{
+      const name = v.name.trim();
+      if(!name) return;
+      const newId = Math.max(0, ...MENU.map(m=>m.id)) + 1;
+      MENU.push({
+        id: newId, name, cat: v.cat, price: parseInt(v.price) || 0,
+        desc: v.desc.trim() || 'No description yet.',
+        img: v.img.trim() || null,
+        tint: 'linear-gradient(160deg,#F0EDE3,#DCD6C4)',
+        avail: true
+      });
+      renderMenuTable();
+      renderCustCats();
+      if(viewMode==='grid') renderCustRight();
+    }
+  });
+};
+document.getElementById('addCategoryBtn').onclick = ()=>{
+  openEditModal({
+    title: 'Add category',
+    fields: [ { key:'label', label:'Category name', value:'' } ],
+    onSave: (v)=>{
+      const label = v.label.trim();
+      if(!label) return;
+      let id = label.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+      if(!id || CATS.some(c=>c.id===id)) id = id + '-' + Date.now();
+      CATS.push({ id, label });
+      renderCustCats();
+      renderMenuTable();
+    }
+  });
+};
 /* ============================================================
    STATEMENT OF PROFIT & LOSS (Premium feature)
    ============================================================ */
@@ -1571,7 +1668,16 @@ function computePnl(period){
   const totalRevenue = filtered.reduce((s,o)=>s+o.total, 0);
   const orderCount = filtered.length;
   const avgOrderValue = orderCount ? Math.round(totalRevenue/orderCount) : 0;
-  return { label, filtered, start, end, grossSales, serviceCharge, taxCollected, totalRevenue, orderCount, avgOrderValue };
+
+  const filteredExpenses = EXPENSES.filter(e=>{
+    if(!e.expense_date) return false;
+    const t = new Date(e.expense_date + 'T00:00:00').getTime();
+    return t >= start.getTime() && t < end.getTime();
+  });
+  const totalExpenses = filteredExpenses.reduce((s,e)=>s+(e.amount||0), 0);
+  const netProfit = totalRevenue - totalExpenses;
+
+  return { label, filtered, filteredExpenses, start, end, grossSales, serviceCharge, taxCollected, totalRevenue, orderCount, avgOrderValue, totalExpenses, netProfit };
 }
 
 function renderPnlTable(data){
@@ -1580,10 +1686,37 @@ function renderPnlTable(data){
     <tr><td>Gross food &amp; drink sales</td><td>${fmt(data.grossSales)}</td></tr>
     <tr><td>Service charge collected</td><td>${fmt(data.serviceCharge)}</td></tr>
     <tr><td>Tax collected</td><td>${fmt(data.taxCollected)}</td></tr>
-    <tr class="pnl-total-row"><td>Total revenue</td><td>${fmt(data.totalRevenue)}</td></tr>
+    <tr class="pnl-subtotal-row"><td>Total revenue</td><td>${fmt(data.totalRevenue)}</td></tr>
+    <tr class="pnl-expense-row"><td>Total expenses</td><td>− ${fmt(data.totalExpenses)}</td></tr>
+    <tr class="pnl-total-row"><td>Net profit</td><td>${fmt(data.netProfit)}</td></tr>
     <tr><td>Orders in period</td><td>${data.orderCount}</td></tr>
     <tr><td>Average order value</td><td>${fmt(data.avgOrderValue)}</td></tr>
   `;
+}
+
+function renderExpenseTable(data){
+  const tbody = document.getElementById('expenseTbody');
+  if(!tbody) return;
+  if(data.filteredExpenses.length === 0){
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:20px 0;">No expenses logged for this period.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.filteredExpenses.map(e=>`
+    <tr>
+      <td>${new Date(e.expense_date+'T00:00:00').toLocaleDateString([], {month:'short', day:'numeric'})}</td>
+      <td>${e.category || 'Other'}</td>
+      <td style="color:var(--ink-soft);">${e.description || ''}</td>
+      <td>${fmt(e.amount||0)}</td>
+      <td><span class="editbtn" data-delexp="${e.id}">Delete</span></td>
+    </tr>`).join('');
+  document.querySelectorAll('[data-delexp]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      await deleteExpense(parseInt(btn.dataset.delexp));
+      const fresh = await fetchAllExpenses();
+      if(fresh !== null) EXPENSES = fresh;
+      renderPnl(currentPnlPeriod);
+    };
+  });
 }
 
 function getPnlBuckets(period, filtered, start, end){
@@ -1633,6 +1766,7 @@ function renderPnl(period){
   currentPnlPeriod = period;
   const data = computePnl(period);
   renderPnlTable(data);
+  renderExpenseTable(data);
   renderPnlChart(getPnlBuckets(period, data.filtered, data.start, data.end));
 }
 document.querySelectorAll('.pnl-period-btn').forEach(btn=>{
@@ -1642,6 +1776,32 @@ document.querySelectorAll('.pnl-period-btn').forEach(btn=>{
     renderPnl(btn.dataset.period);
   };
 });
+document.getElementById('addExpenseBtn').onclick = ()=>{
+  openEditModal({
+    title: 'Add expense',
+    sub: 'Logged expenses count toward whichever period they fall into.',
+    fields: [
+      { key:'category', label:'Category', type:'select', value:'Ingredients', options:[
+          {value:'Ingredients', label:'Ingredients / Food cost'},
+          {value:'Staff Wages', label:'Staff wages'},
+          {value:'Rent', label:'Rent'},
+          {value:'Utilities', label:'Utilities'},
+          {value:'Other', label:'Other'},
+        ] },
+      { key:'description', label:'Description (optional)', value:'' },
+      { key:'amount', label:'Amount (৳)', value:'', type:'number' },
+      { key:'expense_date', label:'Date', value:new Date().toISOString().slice(0,10), type:'date' },
+    ],
+    onSave: async (v)=>{
+      const amount = parseInt(v.amount) || 0;
+      if(amount <= 0) return;
+      await insertExpense({ category:v.category, description:(v.description||'').trim(), amount, expense_date:v.expense_date });
+      const fresh = await fetchAllExpenses();
+      if(fresh !== null) EXPENSES = fresh;
+      renderPnl(currentPnlPeriod);
+    }
+  });
+};
 
 function currentKioskBaseUrl(){
   const input = document.getElementById('qrBaseUrl');
