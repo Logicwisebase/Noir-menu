@@ -159,6 +159,21 @@
   .checkout-error{color:#C0392B;font-size:12px;margin-top:6px;display:none;}
   .checkout-error.show{display:block;}
 
+  /* ---- promo code entry ---- */
+  .promo-row{display:flex;gap:8px;margin:14px 0 4px;}
+  .promo-row input{flex:1;border:1px solid var(--line);border-radius:9px;padding:10px 13px;font-size:13px;font-family:inherit;color:var(--ink);}
+  .promo-row button{background:var(--navy);color:#fff;padding:0 16px;border-radius:9px;font-size:12.5px;font-weight:700;}
+  .promo-msg{color:#C0392B;font-size:11.5px;margin-bottom:4px;min-height:14px;}
+
+  /* ---- order tracking + star rating ---- */
+  .track-wrap{margin-top:24px;padding-top:20px;border-top:1px solid var(--line);text-align:left;}
+  .track-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin-bottom:8px;}
+  .rate-wrap{margin-top:16px;}
+  .rate-wrap textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:10px 13px;font-size:13px;font-family:inherit;color:var(--ink);margin-top:8px;resize:vertical;}
+  .star-row{font-size:26px;letter-spacing:4px;color:var(--line);}
+  .star-btn{cursor:pointer;color:#D8D4C8;}
+  .star-btn.on{color:#E8B84B;}
+
   /* ---- generic modal ---- */
   .modal-overlay{position:fixed;inset:0;background:rgba(11,18,32,.55);z-index:90;display:none;}
   .modal-overlay.show{display:block;}
@@ -415,6 +430,21 @@
     .ot-options{flex-direction:column;align-items:center;}
   }
 
+  /* ============================================================
+     PRINT — used by the P&L "Download PDF" button
+     ============================================================ */
+  @media print{
+    body.printing-pnl .mgr-side, body.printing-pnl .mgr-topbar,
+    body.printing-pnl .pnl-period-row, body.printing-pnl #addExpenseBtn,
+    body.printing-pnl [data-delexp], body.printing-pnl .qr-baseurl-hint,
+    body.printing-pnl #exportCsvBtn, body.printing-pnl #exportPdfBtn{ display:none !important; }
+    body.printing-pnl .mgr-shell{ display:block !important; }
+    body.printing-pnl .mgr-main{ overflow:visible !important; height:auto !important; padding:0 !important; }
+    body.printing-pnl .mgr-view{ display:none !important; }
+    body.printing-pnl .mgr-view#mgr-pnl{ display:block !important; }
+    body.printing-pnl .panel{ box-shadow:none !important; border:1px solid #ccc !important; break-inside:avoid; }
+  }
+
 </style>
 </head>
 <body class="route-customer">
@@ -490,6 +520,7 @@
       <div class="mgr-navitem" data-view="mgr-qr"><span>▦</span><span>QR Codes</span></div>
       <div class="mgr-navitem" data-view="mgr-analytics"><span>📈</span><span>Analytics</span></div>
       <div class="mgr-navitem" data-view="mgr-pnl"><span>💹</span><span>P&amp;L</span><span class="premium-tag">✦</span></div>
+      <div class="mgr-navitem" data-view="mgr-promo"><span>🏷️</span><span>Promotions</span><span class="premium-tag">✦</span></div>
       <div class="mgr-navitem" data-view="mgr-settings"><span>⚙️</span><span>Settings</span></div>
       <div class="mgr-side-bottom">
         <div class="mgr-planbadge">Logicwise Order plan<br>Renews Sep 30, 2026</div>
@@ -555,7 +586,7 @@
           <div class="panel-head"><div class="panel-title">Customer database</div></div>
           <div class="qr-baseurl-hint" style="margin-bottom:16px;">Built automatically from the name &amp; phone number customers enter at checkout. Repeat visitors are recognized by phone number, so you can spot regulars and reward them later.</div>
           <table class="custtable">
-            <thead><tr><th>Name</th><th>Phone</th><th>Visits</th><th>Total spent</th><th>Last visit</th></tr></thead>
+            <thead><tr><th>Name</th><th>Phone</th><th>Visits</th><th>Total spent</th><th>Rating</th><th>Last visit</th></tr></thead>
             <tbody id="custTbody"></tbody>
           </table>
         </div>
@@ -614,7 +645,7 @@
         </div>
 
         <div class="panel">
-          <div class="panel-head"><div class="panel-title">Statement</div></div>
+          <div class="panel-head"><div class="panel-title">Statement</div><div style="display:flex;gap:8px;"><button class="abtn" id="exportCsvBtn">⬇ CSV</button><button class="abtn" id="exportPdfBtn">⬇ PDF</button></div></div>
           <table class="pnl-table" id="pnlTable"></table>
           <div class="pnl-note">Revenue is pulled automatically from orders. Expenses below are logged manually, so net profit is only as accurate as what's been entered.</div>
         </div>
@@ -633,11 +664,32 @@
         </div>
       </div>
 
+      <div class="mgr-view" id="mgr-promo">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">Promo codes <span class="premium-badge">✦ Premium</span></div>
+            <button class="addproductbtn" id="addPromoBtn">+ New code</button>
+          </div>
+          <div class="qr-baseurl-hint" style="margin-bottom:16px;">Loyalty reward codes (🎁) are generated automatically for repeat customers — see the Customers tab. You can also create general promo codes here for happy-hour deals, launch discounts, etc. Customers enter any code at checkout.</div>
+          <table class="custtable">
+            <thead><tr><th>Code</th><th>Type</th><th>Value</th><th>Uses</th><th>Status</th><th></th></tr></thead>
+            <tbody id="promoTbody"></tbody>
+          </table>
+        </div>
+      </div>
+
       <div class="mgr-view" id="mgr-settings">
         <div class="panel">
           <div class="panel-head"><div class="panel-title">Restaurant profile</div></div>
           <div class="settingrow"><div><div class="setlabel">Restaurant name</div><div class="setdesc" id="setRestName">NOIR</div></div><span class="editbtn" id="editRestName">Edit</span></div>
           <div class="settingrow"><div><div class="setlabel">Branch</div><div class="setdesc" id="setBranch">Gulshan, Dhaka</div></div><span class="editbtn" id="editBranch">Edit</span></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Notifications</div></div>
+          <div class="settingrow">
+            <div><div class="setlabel">🔔 New order sound alert</div><div class="setdesc">Plays a chime when an order comes in — tap once to enable (browsers require this)</div></div>
+            <div class="toggle" id="soundAlertToggle"><div class="dot"></div></div>
+          </div>
         </div>
         <div class="panel">
           <div class="panel-head"><div class="panel-title">Customer menu appearance</div></div>
@@ -871,6 +923,8 @@ const EXPENSES_TABLE = 'Expenses';   // for the P&L Premium feature — see the 
 const MENU_IMAGES_BUCKET = 'menu-images'; // Supabase Storage bucket for uploaded dish photos — see the setup instructions
 const CATEGORIES_TABLE = 'Categories';    // real, shared menu structure — see the setup instructions
 const MENUITEMS_TABLE = 'MenuItems';      // real, shared menu structure — see the setup instructions
+const PROMO_TABLE = 'PromoCodes';         // promo codes + auto-generated reward codes — see the setup instructions
+const REWARD_VALUE = 300;                 // taka off, auto-granted every 5th visit
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -889,6 +943,10 @@ function mapDbOrder(row){
     customerName: row.customer_name,
     customerPhone: row.customer_phone,
     paymentMethod: row.payment_method,
+    promoCode: row.promo_code,
+    discountAmount: row.discount_amount || 0,
+    rating: row.rating,
+    feedback: row.feedback,
     placedAt: row.placed_at ? new Date(row.placed_at).getTime() : Date.now()
   };
 }
@@ -911,7 +969,9 @@ async function insertOrder(input){
     status: 'new',
     customer_name: input.customerName || null,
     customer_phone: input.customerPhone || null,
-    payment_method: input.paymentMethod || null
+    payment_method: input.paymentMethod || null,
+    promo_code: input.promoCode || null,
+    discount_amount: input.discountAmount || 0
   }]).select().single();
   if(error){ console.error('NOIR: could not save order', error); return null; }
   return mapDbOrder(data);
@@ -923,9 +983,46 @@ async function updateOrderStatus(id, status){
   return true;
 }
 
+async function submitOrderRating(id, rating, feedback){
+  const { error } = await sb.from(ORDERS_TABLE).update({ rating, feedback: feedback || null }).eq('id', id);
+  if(error){ console.error('NOIR: could not save rating', error); return false; }
+  return true;
+}
+
+let knownOrderIds = new Set();
+let soundAlertsEnabled = false;
+let audioCtx = null;
+function playChime(){
+  if(!soundAlertsEnabled) return;
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const now = audioCtx.currentTime;
+    [880, 1320].forEach((freq, i)=>{
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, now + i*0.15);
+      gain.gain.linearRampToValueAtTime(0.25, now + i*0.15 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + i*0.15 + 0.35);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(now + i*0.15);
+      osc.stop(now + i*0.15 + 0.4);
+    });
+  }catch(e){ console.error('NOIR: chime failed', e); }
+}
+
 async function loadAndRenderOrders(){
   const orders = await fetchAllOrders();
-  if(orders !== null){ ORDERS = orders; }
+  if(orders !== null){
+    if(knownOrderIds.size > 0){
+      const hasNew = orders.some(o=>!knownOrderIds.has(o.id));
+      if(hasNew) playChime();
+    }
+    knownOrderIds = new Set(orders.map(o=>o.id));
+    ORDERS = orders;
+  }
   const expenses = await fetchAllExpenses();
   if(expenses !== null){ EXPENSES = expenses; }
   const cats = await fetchCategories();
@@ -937,8 +1034,40 @@ async function loadAndRenderOrders(){
   renderCustomers();
   renderPnl(currentPnlPeriod);
   renderMenuTable();
+  renderPromoTable();
   renderCustCats();
   if(viewMode==='grid') renderCustRight();
+}
+
+/* ---------- promo codes & auto-generated loyalty rewards ---------- */
+async function fetchAllPromoCodes(){
+  const { data, error } = await sb.from(PROMO_TABLE).select('*').order('created_at', { ascending:false });
+  if(error){ console.error('NOIR: could not load promo codes', error); return null; }
+  return data || [];
+}
+async function fetchPromoByCode(code){
+  const { data, error } = await sb.from(PROMO_TABLE).select('*').ilike('code', code).maybeSingle();
+  if(error){ console.error('NOIR: could not check promo code', error); return null; }
+  return data;
+}
+async function insertPromoCode(input){
+  const { error } = await sb.from(PROMO_TABLE).insert([input]);
+  if(error){ console.error('NOIR: could not save promo code', error); return false; }
+  return true;
+}
+async function setPromoActive(id, active){
+  const { error } = await sb.from(PROMO_TABLE).update({ active }).eq('id', id);
+  if(error){ console.error('NOIR: could not update promo code', error); return false; }
+  return true;
+}
+async function incrementPromoUsage(id, currentTimesUsed){
+  const { error } = await sb.from(PROMO_TABLE).update({ times_used: (currentTimesUsed||0) + 1 }).eq('id', id);
+  if(error) console.error('NOIR: could not update promo usage', error);
+}
+function computeDiscountAmount(promo, subtotal){
+  if(!promo) return 0;
+  if(promo.discount_type === 'percent') return Math.round(subtotal * (promo.discount_value/100));
+  return Math.min(promo.discount_value, subtotal);
 }
 
 /* ---------- customer database (repeat visitors + reward eligibility) ---------- */
@@ -946,10 +1075,12 @@ async function recordCustomerVisit(name, phone, amountSpent){
   if(!phone) return;
   const { data: existing, error: findErr } = await sb.from(CUSTOMERS_TABLE).select('*').eq('phone', phone).maybeSingle();
   if(findErr){ console.error('NOIR: could not look up customer', findErr); return; }
+  let newVisitCount = 1;
   if(existing){
+    newVisitCount = (existing.visit_count || 1) + 1;
     await sb.from(CUSTOMERS_TABLE).update({
       name: name || existing.name,
-      visit_count: (existing.visit_count || 1) + 1,
+      visit_count: newVisitCount,
       total_spent: (existing.total_spent || 0) + amountSpent,
       last_visit: new Date().toISOString()
     }).eq('id', existing.id);
@@ -957,6 +1088,14 @@ async function recordCustomerVisit(name, phone, amountSpent){
     await sb.from(CUSTOMERS_TABLE).insert([{
       name: name || null, phone, visit_count: 1, total_spent: amountSpent, last_visit: new Date().toISOString()
     }]);
+  }
+  if(newVisitCount > 0 && newVisitCount % 5 === 0){
+    const code = 'REWARD' + Math.random().toString(36).slice(2,7).toUpperCase();
+    await insertPromoCode({
+      code, kind:'reward', discount_type:'fixed', discount_value:REWARD_VALUE,
+      customer_phone:phone, active:true, max_uses:1, times_used:0,
+      description:`Loyalty reward — visit #${newVisitCount}`
+    });
   }
 }
 
@@ -968,24 +1107,31 @@ async function fetchAllCustomers(){
 
 async function renderCustomers(){
   const customers = await fetchAllCustomers();
+  const promos = await fetchAllPromoCodes();
   const tbody = document.getElementById('custTbody');
   if(!tbody) return;
   if(customers === null){
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:24px 0;">Couldn't load the customer list.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:24px 0;">Couldn't load the customer list.</td></tr>`;
     return;
   }
   if(customers.length === 0){
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:24px 0;">No customers yet — they're added automatically once someone checks out with their name and phone number.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:24px 0;">No customers yet — they're added automatically once someone checks out with their name and phone number.</td></tr>`;
     return;
   }
-  tbody.innerHTML = customers.map(c=>`
+  tbody.innerHTML = customers.map(c=>{
+    const reward = (promos||[]).find(p=>p.kind==='reward' && p.customer_phone===c.phone && p.active && p.times_used < (p.max_uses||1));
+    const ratings = ORDERS.filter(o=>o.customerPhone===c.phone && o.rating).map(o=>o.rating);
+    const avgRating = ratings.length ? (ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1) : null;
+    return `
     <tr>
-      <td>${c.name || '—'}${c.visit_count>1?'<span class="repeat-badge">Repeat</span>':''}${c.visit_count>0 && c.visit_count%5===0?' <span class="reward-badge">🎁 Reward eligible</span>':''}</td>
+      <td>${c.name || '—'}${c.visit_count>1?'<span class="repeat-badge">Repeat</span>':''}${reward?` <span class="reward-badge">🎁 ${reward.code}</span>`:''}</td>
       <td>${c.phone}</td>
       <td>${c.visit_count}</td>
       <td>${fmt(c.total_spent||0)}</td>
+      <td>${avgRating ? '★ '+avgRating : '—'}</td>
       <td>${c.last_visit ? timeAgo(new Date(c.last_visit).getTime()) : '—'}</td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 
 /* ---------- expenses (for the P&L Premium feature) ---------- */
@@ -1366,6 +1512,10 @@ function closeCart(){
   document.getElementById('cartOverlay').classList.remove('show');
   document.getElementById('cartDrawer').classList.remove('show');
 }
+let appliedPromo = null; // { id, code, discount_type, discount_value, kind, max_uses, times_used, customer_phone, expires_at }
+let trackingOrderId = null;
+let trackingInterval = null;
+
 function renderCartDrawer(){
   if(cart.length===0){
     document.getElementById('cartDrawer').innerHTML = `
@@ -1374,9 +1524,12 @@ function renderCartDrawer(){
     document.getElementById('cartCloseBtn').onclick = closeCart;
     return;
   }
-  const service = Math.round(cartSubtotal()*0.05);
-  const tax = Math.round(cartSubtotal()*0.05);
-  const total = cartSubtotal()+service+tax;
+  const rawSubtotal = cartSubtotal();
+  const discountAmount = appliedPromo ? computeDiscountAmount(appliedPromo, rawSubtotal) : 0;
+  const subtotal = Math.max(0, rawSubtotal - discountAmount);
+  const service = Math.round(subtotal*0.05);
+  const tax = Math.round(subtotal*0.05);
+  const total = subtotal+service+tax;
   document.getElementById('cartDrawer').innerHTML = `
     <div class="cart-drawer-head"><div class="cart-drawer-title">Your Order · ${tableLabel}</div><div class="cart-close" id="cartCloseBtn">✕</div></div>
     <div class="cart-drawer-body" id="cartBody">
@@ -1390,7 +1543,15 @@ function renderCartDrawer(){
           </div>
           <div class="ci-qty"><button data-dec="${idx}">−</button><div class="qty-num">${it.qty}</div><button data-inc="${idx}">+</button></div>
         </div>`).join('')}
-      <div class="summary-row"><span>Subtotal</span><span>${fmt(cartSubtotal())}</span></div>
+
+      <div class="promo-row">
+        <input type="text" id="promoInput" placeholder="Promo or reward code" value="${appliedPromo ? appliedPromo.code : ''}" ${appliedPromo ? 'disabled' : ''}>
+        ${appliedPromo ? `<button type="button" id="removePromoBtn">Remove</button>` : `<button type="button" id="applyPromoBtn">Apply</button>`}
+      </div>
+      <div class="promo-msg" id="promoMsg"></div>
+
+      <div class="summary-row"><span>Subtotal</span><span>${fmt(rawSubtotal)}</span></div>
+      ${appliedPromo ? `<div class="summary-row" style="color:var(--green);"><span>Discount (${appliedPromo.code})</span><span>− ${fmt(discountAmount)}</span></div>` : ''}
       <div class="summary-row"><span>Service charge (5%)</span><span>${fmt(service)}</span></div>
       <div class="summary-row"><span>Tax (5%)</span><span>${fmt(tax)}</span></div>
       <div class="summary-row total"><span>Total</span><span>${fmt(total)}</span></div>
@@ -1406,7 +1567,7 @@ function renderCartDrawer(){
           <button type="button" class="paybtn ${checkoutPayment==='nagad'?'on':''}" data-pay="nagad">📱 Nagad</button>
           <button type="button" class="paybtn ${checkoutPayment==='card'?'on':''}" data-pay="card">💳 Card</button>
         </div>
-        <div class="checkout-error" id="checkoutError">Please add your name, phone number, and how you'll pay.</div>
+        <div class="checkout-error" id="checkoutError"></div>
       </div>
     </div>
     <div class="cart-drawer-foot"><button class="place-btn" id="placeOrderBtn">Place Order</button></div>
@@ -1426,17 +1587,51 @@ function renderCartDrawer(){
       btn.classList.add('on');
     };
   });
+  const applyBtn = document.getElementById('applyPromoBtn');
+  if(applyBtn){
+    applyBtn.onclick = async ()=>{
+      const code = document.getElementById('promoInput').value.trim();
+      const msgEl = document.getElementById('promoMsg');
+      if(!code) return;
+      applyBtn.disabled = true; applyBtn.textContent = '…';
+      const promo = await fetchPromoByCode(code);
+      if(!promo || !promo.active){
+        msgEl.textContent = "That code isn't valid.";
+      }else if(promo.expires_at && new Date(promo.expires_at) < new Date()){
+        msgEl.textContent = 'That code has expired.';
+      }else if(promo.max_uses && promo.times_used >= promo.max_uses){
+        msgEl.textContent = 'That code has already been used.';
+      }else{
+        appliedPromo = promo;
+      }
+      renderCartDrawer();
+    };
+  }
+  const removeBtn = document.getElementById('removePromoBtn');
+  if(removeBtn){ removeBtn.onclick = ()=>{ appliedPromo = null; renderCartDrawer(); }; }
   document.getElementById('placeOrderBtn').onclick = placeOrder;
+}
+
+function showCheckoutError(msg){
+  const el = document.getElementById('checkoutError');
+  el.textContent = msg;
+  el.classList.add('show');
 }
 
 function placeOrder(){
   if(!checkoutName.trim() || !checkoutPhone.trim() || !checkoutPayment){
-    document.getElementById('checkoutError').classList.add('show');
+    showCheckoutError("Please add your name, phone number, and how you'll pay.");
+    return;
+  }
+  if(appliedPromo && appliedPromo.customer_phone && appliedPromo.customer_phone !== checkoutPhone.trim()){
+    showCheckoutError("That reward code belongs to a different phone number.");
     return;
   }
   document.getElementById('checkoutError').classList.remove('show');
 
-  const subtotal = cartSubtotal();
+  const rawSubtotal = cartSubtotal();
+  const discountAmount = appliedPromo ? computeDiscountAmount(appliedPromo, rawSubtotal) : 0;
+  const subtotal = Math.max(0, rawSubtotal - discountAmount);
   const service = Math.round(subtotal*0.05);
   const tax = Math.round(subtotal*0.05);
   const total = subtotal+service+tax;
@@ -1445,19 +1640,30 @@ function placeOrder(){
   const placeBtn = document.getElementById('placeOrderBtn');
   if(placeBtn){ placeBtn.disabled = true; placeBtn.textContent = 'Sending to kitchen…'; }
 
-  placeOrderRemote(itemsSnapshot, subtotal, service, tax, total);
+  placeOrderRemote(itemsSnapshot, subtotal, service, tax, total, discountAmount);
 }
 
-async function placeOrderRemote(itemsSnapshot, subtotal, service, tax, total){
+function starRowHtml(current){
+  return Array.from({length:5}, (_,i)=>`<span class="star-btn ${i<current?'on':''}" data-star="${i+1}">★</span>`).join('');
+}
+
+async function placeOrderRemote(itemsSnapshot, subtotal, service, tax, total, discountAmount){
+  const usedPromo = appliedPromo;
   const saved = await insertOrder({
     tableLabel, orderType, items: itemsSnapshot, subtotal, service, tax, total,
-    customerName: checkoutName.trim(), customerPhone: checkoutPhone.trim(), paymentMethod: checkoutPayment
+    customerName: checkoutName.trim(), customerPhone: checkoutPhone.trim(), paymentMethod: checkoutPayment,
+    promoCode: usedPromo ? usedPromo.code : null, discountAmount
   });
   const synced = !!saved;
   const order = saved || { id: '—', tableLabel, orderType, items: itemsSnapshot, subtotal, service, tax, total, status: 'new', placedAt: Date.now() };
 
-  if(synced) recordCustomerVisit(checkoutName.trim(), checkoutPhone.trim(), total);
+  if(synced){
+    recordCustomerVisit(checkoutName.trim(), checkoutPhone.trim(), total);
+    if(usedPromo) incrementPromoUsage(usedPromo.id, usedPromo.times_used || 0);
+  }
   checkoutPayment = null;
+  appliedPromo = null;
+  stopTrackingOrder();
 
   cart = [];
   updateCartCount();
@@ -1475,10 +1681,75 @@ async function placeOrderRemote(itemsSnapshot, subtotal, service, tax, total){
         ------------------------<br>
         TOTAL ${fmt(order.total)}
       </div>
+      ${synced && typeof order.id === 'number' ? `
+        <div class="track-wrap">
+          <div class="track-label">Order status</div>
+          <div id="trackStatus"></div>
+          <div class="rate-wrap" id="trackRating" style="display:none;">
+            <div class="track-label">How was it?</div>
+            <div class="star-row" id="starRow">${starRowHtml(0)}</div>
+            <textarea id="feedbackInput" placeholder="Anything you'd like to tell us? (optional)" rows="2"></textarea>
+            <button id="submitRatingBtn" class="place-btn" style="margin-top:8px;">Submit feedback</button>
+          </div>
+        </div>` : ''}
       <button id="doneBtn">Back to Menu</button>
     </div>`;
   document.getElementById('cartCloseBtn').onclick = closeCart;
-  document.getElementById('doneBtn').onclick = closeCart;
+  document.getElementById('doneBtn').onclick = ()=>{ stopTrackingOrder(); closeCart(); };
+
+  if(synced && typeof order.id === 'number'){
+    startTrackingOrder(order.id);
+  }
+}
+
+function startTrackingOrder(orderId){
+  trackingOrderId = orderId;
+  selectedRatingStars = 0;
+  if(trackingInterval) clearInterval(trackingInterval);
+  pollTrackedOrder();
+  trackingInterval = setInterval(pollTrackedOrder, 5000);
+}
+function stopTrackingOrder(){
+  trackingOrderId = null;
+  if(trackingInterval){ clearInterval(trackingInterval); trackingInterval = null; }
+}
+async function pollTrackedOrder(){
+  if(!trackingOrderId) return;
+  const { data, error } = await sb.from(ORDERS_TABLE).select('*').eq('id', trackingOrderId).maybeSingle();
+  if(error || !data) return;
+  renderTrackingStatus(mapDbOrder(data));
+}
+let selectedRatingStars = 0;
+function renderTrackingStatus(order){
+  const statusEl = document.getElementById('trackStatus');
+  if(!statusEl) return; // drawer moved on — stop bothering the DOM
+  statusEl.innerHTML = `<span class="status-pill st-${order.status}">${STATUS_LABEL[order.status]}</span>`;
+  const ratingWrap = document.getElementById('trackRating');
+  if(!ratingWrap) return;
+  if(order.rating){
+    ratingWrap.style.display = 'block';
+    ratingWrap.innerHTML = `<div class="track-label">Thanks for your feedback!</div><div class="star-row">${starRowHtml(order.rating)}</div>`;
+  }else if(order.status === 'completed'){
+    ratingWrap.style.display = 'block';
+    document.querySelectorAll('[data-star]').forEach(s=>{
+      s.onclick = ()=>{
+        selectedRatingStars = parseInt(s.dataset.star);
+        document.querySelectorAll('[data-star]').forEach(x=>x.classList.toggle('on', parseInt(x.dataset.star) <= selectedRatingStars));
+      };
+    });
+    const submitBtn = document.getElementById('submitRatingBtn');
+    if(submitBtn){
+      submitBtn.onclick = async ()=>{
+        if(!selectedRatingStars) return;
+        submitBtn.disabled = true; submitBtn.textContent = 'Submitting…';
+        const feedback = document.getElementById('feedbackInput').value.trim();
+        await submitOrderRating(trackingOrderId, selectedRatingStars, feedback);
+        pollTrackedOrder();
+      };
+    }
+  }else{
+    ratingWrap.style.display = 'none';
+  }
 }
 
 /* ============================================================
@@ -1548,9 +1819,13 @@ function openOrderDetailModal(o){
         </div>`).join('')}
     </div>
     <div class="od-row"><span>Subtotal</span><span>${fmt(o.subtotal)}</span></div>
+    ${o.discountAmount ? `<div class="od-row" style="color:var(--green);"><span>Discount${o.promoCode ? ' ('+o.promoCode+')' : ''}</span><span>− ${fmt(o.discountAmount)}</span></div>` : ''}
     <div class="od-row"><span>Service charge</span><span>${fmt(o.service)}</span></div>
     <div class="od-row"><span>Tax</span><span>${fmt(o.tax)}</span></div>
     <div class="od-row" style="font-weight:700;"><span>Total</span><span>${fmt(o.total)}</span></div>
+    ${o.rating ? `
+      <div class="od-row"><span>Rating</span><span>${'★'.repeat(o.rating)}${'☆'.repeat(5-o.rating)}</span></div>
+      ${o.feedback ? `<div class="od-row"><span>Feedback</span><span style="text-align:right;max-width:220px;">${o.feedback}</span></div>` : ''}` : ''}
     ${STATUS_FLOW[o.status] ? `<div class="modal-actions"><button class="modal-cancel" id="modalCancelBtn">Close</button><button class="modal-save" data-advance="${o.id}" id="modalAdvanceBtn">${STATUS_ACTION[o.status]}</button></div>` : `<div class="modal-actions"><button class="modal-cancel" id="modalCancelBtn">Close</button></div>`}
   `);
   document.getElementById('modalCloseX').onclick = closeModal;
@@ -1919,6 +2194,36 @@ function renderPnl(period){
   renderExpenseTable(data);
   renderPnlChart(getPnlBuckets(period, data.filtered, data.start, data.end));
 }
+function exportPnlCsv(){
+  const data = computePnl(currentPnlPeriod);
+  const rows = [
+    ['NOIR — Statement of Profit & Loss'],
+    [data.label],
+    [],
+    ['Gross food & drink sales', data.grossSales],
+    ['Service charge collected', data.serviceCharge],
+    ['Tax collected', data.taxCollected],
+    ['Total revenue', data.totalRevenue],
+    ['Total expenses', -data.totalExpenses],
+    ['Net profit', data.netProfit],
+    [],
+    ['Orders in period', data.orderCount],
+    ['Average order value', data.avgOrderValue]
+  ];
+  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type:'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `NOIR-PnL-${currentPnlPeriod}-${Date.now()}.csv`; a.click();
+  URL.revokeObjectURL(url);
+}
+function exportPnlPdf(){
+  document.body.classList.add('printing-pnl');
+  window.print();
+  setTimeout(()=>document.body.classList.remove('printing-pnl'), 500);
+}
+document.getElementById('exportCsvBtn').onclick = exportPnlCsv;
+document.getElementById('exportPdfBtn').onclick = exportPnlPdf;
 document.querySelectorAll('.pnl-period-btn').forEach(btn=>{
   btn.onclick = ()=>{
     document.querySelectorAll('.pnl-period-btn').forEach(b=>b.classList.remove('on'));
@@ -2019,6 +2324,70 @@ document.getElementById('editBranch').onclick = ()=>{
     title: 'Branch',
     fields: [ { key:'branch', label:'Branch', value: branchName } ],
     onSave: (v)=>{ branchName = v.branch.trim() || branchName; applyBranding(); }
+  });
+};
+document.getElementById('soundAlertToggle').onclick = ()=>{
+  soundAlertsEnabled = !soundAlertsEnabled;
+  document.getElementById('soundAlertToggle').classList.toggle('on', soundAlertsEnabled);
+  if(soundAlertsEnabled){
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    playChime();
+  }
+};
+
+async function renderPromoTable(){
+  const codes = await fetchAllPromoCodes();
+  const tbody = document.getElementById('promoTbody');
+  if(!tbody) return;
+  if(codes === null){
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:20px 0;">Couldn't load promo codes.</td></tr>`;
+    return;
+  }
+  if(codes.length === 0){
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:20px 0;">No promo codes yet.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = codes.map(p=>`
+    <tr>
+      <td style="font-weight:700;">${p.code}${p.kind==='reward'?' <span class="reward-badge">🎁 Reward</span>':''}</td>
+      <td>${p.discount_type==='percent' ? '% off' : '৳ off'}</td>
+      <td>${p.discount_type==='percent' ? p.discount_value+'%' : fmt(p.discount_value)}</td>
+      <td>${p.times_used}${p.max_uses ? ('/'+p.max_uses) : ''}</td>
+      <td>${p.active ? 'Active' : 'Inactive'}</td>
+      <td><span class="editbtn" data-togglepromo="${p.id}" data-active="${p.active}">${p.active ? 'Deactivate' : 'Activate'}</span></td>
+    </tr>`).join('');
+  document.querySelectorAll('[data-togglepromo]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      const id = parseInt(btn.dataset.togglepromo);
+      const wasActive = btn.dataset.active === 'true';
+      await setPromoActive(id, !wasActive);
+      renderPromoTable();
+    };
+  });
+}
+document.getElementById('addPromoBtn').onclick = ()=>{
+  openEditModal({
+    title: 'New promo code',
+    sub: 'Works for happy-hour deals, launch discounts, or any general promotion.',
+    fields: [
+      { key:'code', label:'Code (leave blank to auto-generate)', value:'' },
+      { key:'discount_type', label:'Discount type', type:'select', value:'percent', options:[
+          {value:'percent', label:'Percentage off'},
+          {value:'fixed', label:'Fixed amount off (৳)'}
+        ] },
+      { key:'discount_value', label:'Value', value:'', type:'number' },
+      { key:'expires_at', label:'Expires (optional)', value:'', type:'date' },
+      { key:'description', label:'Description (optional)', value:'' }
+    ],
+    onSave: async (v)=>{
+      const code = (v.code.trim() || ('PROMO'+Math.random().toString(36).slice(2,7).toUpperCase())).toUpperCase();
+      await insertPromoCode({
+        code, kind:'promo', discount_type:v.discount_type, discount_value: parseInt(v.discount_value)||0,
+        expires_at: v.expires_at || null, description: v.description.trim() || null, active:true
+      });
+      renderPromoTable();
+    }
   });
 };
 
