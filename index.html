@@ -169,6 +169,9 @@
   .modal-field{margin-bottom:14px;}
   .modal-field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin-bottom:6px;}
   .modal-field input,.modal-field select{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:10px 13px;font-size:13.5px;font-family:inherit;color:var(--ink);}
+  .modal-field input[type="file"]{padding:8px 4px;border:1px dashed var(--line);background:var(--offwhite);font-size:12.5px;}
+  .modal-img-preview{width:100%;aspect-ratio:16/10;border-radius:10px;overflow:hidden;margin-bottom:8px;background:var(--offwhite-2);}
+  .modal-img-preview img{width:100%;height:100%;object-fit:cover;}
   .modal-actions{display:flex;gap:10px;margin-top:20px;}
   .modal-actions button{flex:1;padding:12px;border-radius:9px;font-size:13.5px;font-weight:700;}
   .modal-cancel{background:var(--offwhite-2);color:var(--ink);}
@@ -672,7 +675,7 @@ function dishImgHtml(url, alt){
     : `<div class="dish-photo-fallback">🍽️</div>`;
 }
 
-const CATS = [
+const SEED_CATS = [
   {id:"popular", label:"Popular"},
   {id:"starters", label:"Starters"},
   {id:"mains", label:"Main Course"},
@@ -681,7 +684,7 @@ const CATS = [
   {id:"desserts", label:"Desserts"},
 ];
 
-const MENU = [
+const SEED_MENU = [
   {id:1, name:"Chicken Burger", cat:"popular", price:420, art:"burger", tint:"linear-gradient(160deg,#FCEFDA,#F6D9A9)", img:"https://images.unsplash.com/photo-1481070555726-e2fe8357725c?q=80&w=800&auto=format&fit=crop",
     breadImg:["https://images.unsplash.com/photo-1481070555726-e2fe8357725c?q=80&w=800&auto=format&fit=crop","https://images.unsplash.com/photo-1667329829058-ac191ba4a905?q=80&w=800&auto=format&fit=crop"],
     desc:"Grilled chicken thigh, lettuce, cheddar and house sauce on a toasted brioche bun.",
@@ -727,6 +730,9 @@ const MENU = [
 ];
 
 const OPT_COLORS = ['#4E6EE8','#C77B6E','#8FAE8B','#C6A15B','#B08FC2','#7FA0B0'];
+
+let CATS = [];   // populated from Supabase (see loadMenuAndCategories) — falls back to SEED_CATS if unreachable
+let MENU = [];   // populated from Supabase (see loadMenuAndCategories) — falls back to SEED_MENU if unreachable
 
 let ORDERS = [];     // shared "live" orders — read by Manager Screen
 let EXPENSES = [];   // shared expenses — for the P&L Premium feature
@@ -862,6 +868,9 @@ const SUPABASE_ANON_KEY = 'sb_publishable_-pJrMR34fNQrAQ9RrogaUg_dKzZXLco';
 const ORDERS_TABLE = 'Orders';       // matches the table name exactly as created in Supabase
 const CUSTOMERS_TABLE = 'Customers'; // create this table too — see the setup instructions
 const EXPENSES_TABLE = 'Expenses';   // for the P&L Premium feature — see the setup instructions
+const MENU_IMAGES_BUCKET = 'menu-images'; // Supabase Storage bucket for uploaded dish photos — see the setup instructions
+const CATEGORIES_TABLE = 'Categories';    // real, shared menu structure — see the setup instructions
+const MENUITEMS_TABLE = 'MenuItems';      // real, shared menu structure — see the setup instructions
 
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -919,10 +928,17 @@ async function loadAndRenderOrders(){
   if(orders !== null){ ORDERS = orders; }
   const expenses = await fetchAllExpenses();
   if(expenses !== null){ EXPENSES = expenses; }
+  const cats = await fetchCategories();
+  if(cats !== null && cats.length){ CATS = cats.map(c=>({ id:c.id, label:c.label })); }
+  const items = await fetchMenuItems();
+  if(items !== null && items.length){ MENU = items; }
   // if a fetch fails (offline, misconfigured keys, etc.) we just keep showing whatever we last had
   renderAllManagerData();
   renderCustomers();
   renderPnl(currentPnlPeriod);
+  renderMenuTable();
+  renderCustCats();
+  if(viewMode==='grid') renderCustRight();
 }
 
 /* ---------- customer database (repeat visitors + reward eligibility) ---------- */
@@ -992,6 +1008,99 @@ async function deleteExpense(id){
   const { error } = await sb.from(EXPENSES_TABLE).delete().eq('id', id);
   if(error){ console.error('NOIR: could not delete expense', error); return false; }
   return true;
+}
+
+/* ---------- menu photo uploads (Supabase Storage) ---------- */
+async function uploadMenuImage(file){
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
+  const path = `item-${Date.now()}-${Math.round(Math.random()*1e6)}.${ext}`;
+  const { error } = await sb.storage.from(MENU_IMAGES_BUCKET).upload(path, file, { cacheControl:'3600', upsert:false });
+  if(error){ console.error('NOIR: could not upload photo', error); return null; }
+  const { data } = sb.storage.from(MENU_IMAGES_BUCKET).getPublicUrl(path);
+  return (data && data.publicUrl) || null;
+}
+
+/* ---------- real, shared menu & categories ---------- */
+function mapDbMenuItem(row){
+  return {
+    id: row.id,
+    name: row.name,
+    cat: row.cat,
+    price: row.price,
+    desc: row.description,
+    img: row.img,
+    avail: row.avail !== false,
+    tint: row.tint || 'linear-gradient(160deg,#F0EDE3,#DCD6C4)',
+    bread: row.bread || null,
+    breadImg: row.bread_img || null,
+    addons: row.addons || null,
+    removals: row.removals || null
+  };
+}
+async function fetchCategories(){
+  const { data, error } = await sb.from(CATEGORIES_TABLE).select('*').order('sort_order', { ascending:true });
+  if(error){ console.error('NOIR: could not load categories', error); return null; }
+  return data || [];
+}
+async function fetchMenuItems(){
+  const { data, error } = await sb.from(MENUITEMS_TABLE).select('*').order('id', { ascending:true });
+  if(error){ console.error('NOIR: could not load menu items', error); return null; }
+  return (data || []).map(mapDbMenuItem);
+}
+async function insertCategoryRemote(cat){
+  const { error } = await sb.from(CATEGORIES_TABLE).insert([cat]);
+  if(error){ console.error('NOIR: could not save category', error); return false; }
+  return true;
+}
+async function insertMenuItemRemote(item){
+  const { data, error } = await sb.from(MENUITEMS_TABLE).insert([{
+    name: item.name, cat: item.cat, price: item.price, description: item.desc,
+    img: item.img, avail: item.avail !== false, tint: item.tint,
+    bread: item.bread || null, bread_img: item.breadImg || null,
+    addons: item.addons || null, removals: item.removals || null
+  }]).select().single();
+  if(error){ console.error('NOIR: could not save menu item', error); return null; }
+  return mapDbMenuItem(data);
+}
+async function updateMenuItemRemote(id, patch){
+  const dbPatch = {};
+  if('name' in patch) dbPatch.name = patch.name;
+  if('cat' in patch) dbPatch.cat = patch.cat;
+  if('price' in patch) dbPatch.price = patch.price;
+  if('desc' in patch) dbPatch.description = patch.desc;
+  if('img' in patch) dbPatch.img = patch.img;
+  if('avail' in patch) dbPatch.avail = patch.avail;
+  const { error } = await sb.from(MENUITEMS_TABLE).update(dbPatch).eq('id', id);
+  if(error){ console.error('NOIR: could not update menu item', error); return false; }
+  return true;
+}
+
+async function loadMenuAndCategories(){
+  const cats = await fetchCategories();
+  if(cats === null){
+    CATS = SEED_CATS.slice();
+  }else if(cats.length === 0){
+    await sb.from(CATEGORIES_TABLE).insert(SEED_CATS.map((c,i)=>({ id:c.id, label:c.label, sort_order:i })));
+    const refreshed = await fetchCategories();
+    CATS = (refreshed && refreshed.length) ? refreshed.map(c=>({ id:c.id, label:c.label })) : SEED_CATS.slice();
+  }else{
+    CATS = cats.map(c=>({ id:c.id, label:c.label }));
+  }
+
+  const items = await fetchMenuItems();
+  if(items === null){
+    MENU = SEED_MENU.slice();
+  }else if(items.length === 0){
+    const seedRows = SEED_MENU.map(m=>({
+      name:m.name, cat:m.cat, price:m.price, description:m.desc, img:m.img, avail:m.avail,
+      tint:m.tint, bread:m.bread||null, bread_img:m.breadImg||null, addons:m.addons||null, removals:m.removals||null
+    }));
+    await sb.from(MENUITEMS_TABLE).insert(seedRows);
+    const refreshed = await fetchMenuItems();
+    MENU = (refreshed && refreshed.length) ? refreshed : SEED_MENU.slice();
+  }else{
+    MENU = items;
+  }
 }
 
 /* ============================================================
@@ -1459,13 +1568,23 @@ function openOrderDetailModal(o){
 }
 
 function openEditModal({ title, sub, fields, onSave }){
-  const fieldsHtml = fields.map(f=>`
+  const fieldsHtml = fields.map(f=>{
+    if(f.type === 'file'){
+      return `
+    <div class="modal-field">
+      <label>${f.label}</label>
+      ${f.value ? `<div class="modal-img-preview"><img src="${f.value}" alt=""></div>` : ''}
+      <input type="file" accept="image/*" id="ef-${f.key}">
+    </div>`;
+    }
+    return `
     <div class="modal-field">
       <label>${f.label}</label>
       ${f.type === 'select'
         ? `<select id="ef-${f.key}">${f.options.map(o=>`<option value="${o.value}" ${o.value===f.value?'selected':''}>${o.label}</option>`).join('')}</select>`
         : `<input type="${f.type||'text'}" id="ef-${f.key}" value="${(f.value ?? '').toString().replace(/"/g,'&quot;')}">`}
-    </div>`).join('');
+    </div>`;
+  }).join('');
   openModal(`
     <div class="modal-close-x" id="modalCloseX">✕</div>
     <div class="modal-title">${title}</div>
@@ -1478,9 +1597,31 @@ function openEditModal({ title, sub, fields, onSave }){
   `);
   document.getElementById('modalCloseX').onclick = closeModal;
   document.getElementById('modalCancelBtn').onclick = closeModal;
-  document.getElementById('modalSaveBtn').onclick = ()=>{
+  document.getElementById('modalSaveBtn').onclick = async ()=>{
+    const saveBtn = document.getElementById('modalSaveBtn');
     const values = {};
-    fields.forEach(f=>{ values[f.key] = document.getElementById('ef-'+f.key).value; });
+    for(const f of fields){
+      if(f.type === 'file'){
+        const fileInput = document.getElementById('ef-'+f.key);
+        const file = fileInput.files && fileInput.files[0];
+        if(file){
+          saveBtn.disabled = true;
+          saveBtn.textContent = 'Uploading photo…';
+          const url = await uploadMenuImage(file);
+          if(!url){
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'Save';
+            alert("Couldn't upload the photo — check the Storage setup in Supabase and try again.");
+            return;
+          }
+          values[f.key] = url;
+        }else{
+          values[f.key] = f.value || '';
+        }
+      }else{
+        values[f.key] = document.getElementById('ef-'+f.key).value;
+      }
+    }
     onSave(values);
     closeModal();
   };
@@ -1546,12 +1687,13 @@ function renderMenuTable(){
       <td><span class="editbtn" data-editmenu="${m.id}">Edit</span></td>
     </tr>`).join('');
   document.querySelectorAll('.toggle').forEach(t=>{
-    t.onclick = ()=>{
+    t.onclick = async ()=>{
       const m = MENU.find(x=>x.id===parseInt(t.dataset.id));
       m.avail = !m.avail;
       t.classList.toggle('on');
       renderCustCats();
       if(viewMode==='grid') renderCustRight();
+      await updateMenuItemRemote(m.id, { avail: m.avail });
     };
   });
   document.querySelectorAll('[data-editmenu]').forEach(btn=>{
@@ -1559,15 +1701,15 @@ function renderMenuTable(){
       const m = MENU.find(x=>x.id===parseInt(btn.dataset.editmenu));
       openEditModal({
         title: `Edit ${m.name}`,
-        sub: 'Changes apply immediately on the Customer Kiosk.',
+        sub: 'Changes apply immediately on the Customer Kiosk, on every device.',
         fields: [
           { key:'name', label:'Item name', value:m.name },
           { key:'desc', label:'Description', value:m.desc || '' },
           { key:'price', label:'Price (৳)', value:m.price, type:'number' },
           { key:'cat', label:'Category', type:'select', value:m.cat, options: CATS.map(c=>({value:c.id, label:c.label})) },
-          { key:'img', label:'Photo URL', value:m.img || '' }
+          { key:'img', label:'Photo (choose a file to replace it)', type:'file', value:m.img || '' }
         ],
-        onSave: (v)=>{
+        onSave: async (v)=>{
           m.name = v.name.trim() || m.name;
           m.desc = v.desc.trim();
           m.price = parseInt(v.price) || m.price;
@@ -1576,6 +1718,7 @@ function renderMenuTable(){
           renderMenuTable();
           renderCustCats();
           if(viewMode==='grid') renderCustRight();
+          await updateMenuItemRemote(m.id, { name:m.name, cat:m.cat, price:m.price, desc:m.desc, img:m.img });
         }
       });
     };
@@ -1585,25 +1728,31 @@ function renderMenuTable(){
 document.getElementById('addProductBtn').onclick = ()=>{
   openEditModal({
     title: 'Add menu item',
-    sub: 'It appears on the Customer Kiosk right away, marked available.',
+    sub: 'It appears on the Customer Kiosk right away, marked available, on every device.',
     fields: [
       { key:'name', label:'Item name', value:'' },
       { key:'cat', label:'Category', type:'select', value:CATS[0].id, options: CATS.map(c=>({value:c.id, label:c.label})) },
       { key:'price', label:'Price (৳)', value:'', type:'number' },
       { key:'desc', label:'Description', value:'' },
-      { key:'img', label:'Photo URL (optional)', value:'' }
+      { key:'img', label:'Photo', type:'file', value:'' }
     ],
-    onSave: (v)=>{
+    onSave: async (v)=>{
       const name = v.name.trim();
       if(!name) return;
-      const newId = Math.max(0, ...MENU.map(m=>m.id)) + 1;
-      MENU.push({
-        id: newId, name, cat: v.cat, price: parseInt(v.price) || 0,
+      const newItem = {
+        name, cat: v.cat, price: parseInt(v.price) || 0,
         desc: v.desc.trim() || 'No description yet.',
-        img: v.img.trim() || null,
+        img: v.img || null,
         tint: 'linear-gradient(160deg,#F0EDE3,#DCD6C4)',
         avail: true
-      });
+      };
+      const saved = await insertMenuItemRemote(newItem);
+      if(saved){
+        MENU.push(saved);
+      }else{
+        newItem.id = Math.max(0, ...MENU.map(m=>m.id)) + 1;
+        MENU.push(newItem);
+      }
       renderMenuTable();
       renderCustCats();
       if(viewMode==='grid') renderCustRight();
@@ -1614,11 +1763,12 @@ document.getElementById('addCategoryBtn').onclick = ()=>{
   openEditModal({
     title: 'Add category',
     fields: [ { key:'label', label:'Category name', value:'' } ],
-    onSave: (v)=>{
+    onSave: async (v)=>{
       const label = v.label.trim();
       if(!label) return;
       let id = label.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
       if(!id || CATS.some(c=>c.id===id)) id = id + '-' + Date.now();
+      await insertCategoryRemote({ id, label, sort_order: CATS.length });
       CATS.push({ id, label });
       renderCustCats();
       renderMenuTable();
@@ -1885,17 +2035,19 @@ window.addEventListener('hashchange', applyRoute);
 /* ---------- init ---------- */
 document.getElementById('cartBtn').onclick = openCart;
 document.getElementById('cartOverlay').onclick = closeCart;
-renderCustCats();
-renderCustRight();
 updateCartCount();
 applyBranding();
-
-renderMenuTable();
 renderQR();
-loadAndRenderOrders();
-setInterval(loadAndRenderOrders, 5000);   // check Supabase for new/updated orders every 5s
-
 applyRoute();
+
+(async function initApp(){
+  await loadMenuAndCategories();   // real, shared menu — waits before first render so CATS/MENU aren't empty
+  renderCustCats();
+  renderCustRight();
+  renderMenuTable();
+  loadAndRenderOrders();
+  setInterval(loadAndRenderOrders, 5000);   // check Supabase for new orders, menu edits, etc. every 5s
+})();
 
 </script>
 </body>
