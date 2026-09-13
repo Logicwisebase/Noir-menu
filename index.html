@@ -329,6 +329,9 @@
   .abtn{font-size:11.5px;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);}
   .abtn.primary{background:var(--navy);color:#fff;border-color:var(--navy);}
   .noorders{padding:40px 10px;text-align:center;color:var(--ink-soft);font-size:13.5px;}
+  .history-day{margin-bottom:26px;}
+  .history-day:last-child{margin-bottom:0;}
+  .history-day-head{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid var(--line);}
 
   .orders-layout{display:grid;grid-template-columns:1fr 300px;gap:22px;align-items:start;}
   .ticketfeed{background:var(--navy-2);border-radius:16px;padding:18px;max-height:640px;overflow-y:auto;}
@@ -515,6 +518,7 @@
       <div class="mgr-logo-tag">Manager Screen</div>
       <div class="mgr-navitem on" data-view="mgr-overview"><span>📊</span><span>Overview</span></div>
       <div class="mgr-navitem" data-view="mgr-orders"><span>🧾</span><span>Orders</span><span class="badge" id="ordersBadge">0</span></div>
+      <div class="mgr-navitem" data-view="mgr-history"><span>📅</span><span>Last 7 Days</span></div>
       <div class="mgr-navitem" data-view="mgr-menu"><span>📋</span><span>Menu</span></div>
       <div class="mgr-navitem" data-view="mgr-customers"><span>👤</span><span>Customers</span></div>
       <div class="mgr-navitem" data-view="mgr-qr"><span>▦</span><span>QR Codes</span></div>
@@ -564,6 +568,14 @@
             <div class="ticketfeed-title">🖨️ Kitchen printer</div>
             <div id="ticketFeed"></div>
           </div>
+        </div>
+      </div>
+
+      <div class="mgr-view" id="mgr-history">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Last 7 days</div></div>
+          <div class="qr-baseurl-hint" style="margin-bottom:16px;">The Overview and Orders tabs only show today's activity, so this is where to look back — tap any order for full details.</div>
+          <div id="historyList"></div>
         </div>
       </div>
 
@@ -683,6 +695,8 @@
           <div class="panel-head"><div class="panel-title">Restaurant profile</div></div>
           <div class="settingrow"><div><div class="setlabel">Restaurant name</div><div class="setdesc" id="setRestName">NOIR</div></div><span class="editbtn" id="editRestName">Edit</span></div>
           <div class="settingrow"><div><div class="setlabel">Branch</div><div class="setdesc" id="setBranch">Gulshan, Dhaka</div></div><span class="editbtn" id="editBranch">Edit</span></div>
+          <div class="settingrow"><div><div class="setlabel">Business day starts at</div><div class="setdesc" id="setBusinessDay">6:00 AM</div></div><span class="editbtn" id="editBusinessDay">Edit</span></div>
+          <div class="qr-baseurl-hint" style="margin-top:6px;">If you stay open past midnight, orders placed after closing still count as the previous business day — the Overview, Orders, and Last 7 Days tabs use this to decide when "today" resets.</div>
         </div>
         <div class="panel">
           <div class="panel-head"><div class="panel-title">Tax &amp; compliance (Bangladesh)</div></div>
@@ -1037,6 +1051,7 @@ async function loadAndRenderOrders(){
   if(items !== null && items.length){ MENU = items; }
   // if a fetch fails (offline, misconfigured keys, etc.) we just keep showing whatever we last had
   renderAllManagerData();
+  renderHistoryTab();
   renderCustomers();
   renderPnl(currentPnlPeriod);
   renderMenuTable();
@@ -1271,6 +1286,7 @@ let branchName = 'Gulshan, Dhaka';
 const SERVICE_CHARGE_RATE = 5;   // % — not government-mandated, this is your own house policy
 let vatRate = 5;                 // % — NBR rate for AC, non-alcohol standalone restaurants is typically 5%; confirm your exact category with a VAT consultant
 let restaurantBIN = '';          // Business Identification Number — printed on receipts once set
+let businessDayStartHour = 6;    // 24hr hour (0-23) — lets late-night restaurants define when "today" resets, instead of hardcoded midnight
 function applyBranding(){
   document.getElementById('welcomeTitle').textContent = restaurantName;
   document.getElementById('welcomeSub').textContent = `Modern Asian Kitchen · ${branchName}`;
@@ -1283,6 +1299,7 @@ function applyBranding(){
   const branchDesc = document.getElementById('setBranch'); if(branchDesc) branchDesc.textContent = branchName;
   const vatDesc = document.getElementById('setVatRate'); if(vatDesc) vatDesc.textContent = vatRate + '%';
   const binDesc = document.getElementById('setBIN'); if(binDesc) binDesc.textContent = restaurantBIN || 'Not set';
+  const bizDesc = document.getElementById('setBusinessDay'); if(bizDesc) bizDesc.textContent = new Date(2000,0,1,businessDayStartHour).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
 }
 let pdState = null;
 
@@ -1804,6 +1821,46 @@ function ticketHtml(o){
   </div>`;
 }
 
+function renderHistoryTab(){
+  const el = document.getElementById('historyList');
+  if(!el) return;
+  const { start: todayStart } = getCurrentBusinessDayRange();
+  const cutoff = todayStart.getTime() - 6*24*60*60*1000;   // today's business day + 6 previous = 7 total
+  const recent = ORDERS.filter(o=>o.placedAt >= cutoff);
+  if(recent.length === 0){
+    el.innerHTML = `<div class="noorders">No orders in the last 7 days.</div>`;
+    return;
+  }
+  const groups = {};
+  recent.forEach(o=>{
+    const dayStart = businessDayStartFor(o.placedAt);
+    const key = dayStart.getTime();
+    if(!groups[key]){
+      groups[key] = {
+        label: key === todayStart.getTime() ? 'Today' : dayStart.toLocaleDateString([], { weekday:'long', month:'long', day:'numeric' }),
+        sortKey: key,
+        orders: []
+      };
+    }
+    groups[key].orders.push(o);
+  });
+  const dayList = Object.values(groups).sort((a,b)=>b.sortKey - a.sortKey);
+  el.innerHTML = dayList.map(g=>{
+    const dayRevenue = g.orders.reduce((s,o)=>s+o.total, 0);
+    return `
+      <div class="history-day">
+        <div class="history-day-head"><span>${g.label}</span><span>${g.orders.length} orders · ${fmt(dayRevenue)}</span></div>
+        ${g.orders.map(o=>orderCardHtml(o,false)).join('')}
+      </div>`;
+  }).join('');
+  document.querySelectorAll('#historyList .ordercard').forEach(card=>{
+    card.onclick = ()=>{
+      const o = ORDERS.find(x=>x.id===parseInt(card.dataset.orderId));
+      if(o) openOrderDetailModal(o);
+    };
+  });
+}
+
 /* ============================================================
    SHARED MODAL — used for order details and every "Edit" button
    ============================================================ */
@@ -1920,31 +1977,50 @@ function openEditModal({ title, sub, fields, onSave }){
   };
 }
 
-function renderAllManagerData(){
-  document.getElementById('ordersBadge').textContent = ORDERS.filter(o=>o.status!=='completed').length;
+function businessDayStartFor(ts){
+  const d = new Date(ts);
+  const start = new Date(d);
+  start.setHours(businessDayStartHour, 0, 0, 0);
+  if(d < start) start.setDate(start.getDate() - 1);
+  return start;
+}
+function getCurrentBusinessDayRange(){
+  const start = businessDayStartFor(Date.now());
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
+}
+function isToday(ts){
+  const { start, end } = getCurrentBusinessDayRange();
+  return ts >= start.getTime() && ts < end.getTime();
+}
 
-  // overview
-  document.getElementById('kpiOrders').textContent = ORDERS.length;
-  const revenue = ORDERS.reduce((s,o)=>s+o.total,0);
+function renderAllManagerData(){
+  const todaysOrders = ORDERS.filter(o=>isToday(o.placedAt));
+  document.getElementById('ordersBadge').textContent = todaysOrders.filter(o=>o.status!=='completed').length;
+
+  // overview — today only, so the dashboard starts fresh each day instead of piling up forever
+  document.getElementById('kpiOrders').textContent = todaysOrders.length;
+  const revenue = todaysOrders.reduce((s,o)=>s+o.total,0);
   document.getElementById('kpiRevenue').textContent = fmt(revenue);
-  document.getElementById('kpiAvg').textContent = ORDERS.length? fmt(Math.round(revenue/ORDERS.length)) : '৳0';
-  document.getElementById('kpiTables').textContent = new Set(ORDERS.filter(o=>o.orderType==='dinein').map(o=>o.tableLabel)).size;
+  document.getElementById('kpiAvg').textContent = todaysOrders.length? fmt(Math.round(revenue/todaysOrders.length)) : '৳0';
+  document.getElementById('kpiTables').textContent = new Set(todaysOrders.filter(o=>o.orderType==='dinein').map(o=>o.tableLabel)).size;
   const counts = {};
-  ORDERS.forEach(o=>o.items.forEach(it=>{ counts[it.name]=(counts[it.name]||0)+it.qty; }));
+  todaysOrders.forEach(o=>o.items.forEach(it=>{ counts[it.name]=(counts[it.name]||0)+it.qty; }));
   const top = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
   document.getElementById('kpiPopular').textContent = top? top[0] : '—';
 
-  const overviewList = ORDERS.slice(0,3);
+  const overviewList = todaysOrders.slice(0,3);
   document.getElementById('overviewOrders').innerHTML = overviewList.length
     ? overviewList.map(o=>orderCardHtml(o,false)).join('')
-    : `<div class="noorders">No orders yet — place one from the Customer Kiosk to see it appear here live.</div>`;
+    : `<div class="noorders">No orders yet today — place one from the Customer Kiosk to see it appear here live.</div>`;
 
-  // orders tab
-  document.getElementById('allOrders').innerHTML = ORDERS.length
-    ? ORDERS.map(o=>orderCardHtml(o,true)).join('')
-    : `<div class="noorders">No orders yet — place one from the Customer Kiosk to see it appear here live.</div>`;
-  document.getElementById('ticketFeed').innerHTML = ORDERS.length
-    ? ORDERS.map(ticketHtml).join('')
+  // orders tab — today only; check the "Last 7 Days" tab for history
+  document.getElementById('allOrders').innerHTML = todaysOrders.length
+    ? todaysOrders.map(o=>orderCardHtml(o,true)).join('')
+    : `<div class="noorders">No orders yet today — place one from the Customer Kiosk to see it appear here live.</div>`;
+  document.getElementById('ticketFeed').innerHTML = todaysOrders.length
+    ? todaysOrders.map(ticketHtml).join('')
     : `<div style="color:#8fa3c4;font-size:12px;text-align:center;padding:30px 10px;">Tickets will print here as orders come in.</div>`;
 
   document.querySelectorAll('[data-advance]').forEach(btn=>{
@@ -1979,7 +2055,7 @@ function renderMenuTable(){
       <td><div class="toggle ${m.avail?'on':''}" data-id="${m.id}"><div class="dot"></div></div></td>
       <td><span class="editbtn" data-editmenu="${m.id}">Edit</span></td>
     </tr>`).join('');
-  document.querySelectorAll('.toggle').forEach(t=>{
+  document.querySelectorAll('#menuTbody .toggle').forEach(t=>{
     t.onclick = async ()=>{
       const m = MENU.find(x=>x.id===parseInt(t.dataset.id));
       m.avail = !m.avail;
@@ -2342,6 +2418,22 @@ document.getElementById('editBranch').onclick = ()=>{
     title: 'Branch',
     fields: [ { key:'branch', label:'Branch', value: branchName } ],
     onSave: (v)=>{ branchName = v.branch.trim() || branchName; applyBranding(); }
+  });
+};
+document.getElementById('editBusinessDay').onclick = ()=>{
+  const hourOptions = Array.from({length:24}, (_,h)=>({
+    value: String(h),
+    label: new Date(2000,0,1,h).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})
+  }));
+  openEditModal({
+    title: 'Business day start time',
+    sub: "Orders placed after midnight but before this time still count toward the previous day — set it to whenever you actually close for the night.",
+    fields: [ { key:'hour', label:'New business day starts at', type:'select', value:String(businessDayStartHour), options: hourOptions } ],
+    onSave: (v)=>{
+      businessDayStartHour = parseInt(v.hour);
+      applyBranding();
+      loadAndRenderOrders();
+    }
   });
 };
 document.getElementById('editVatRate').onclick = ()=>{
