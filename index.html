@@ -614,6 +614,11 @@
           <div class="qr-baseurl-hint">This is the web address your kiosk lives at once it's hosted online — see the Settings tab for what that involves. Each table's code just adds its table number to this address, so print them again if you ever move to a new domain.</div>
         </div>
         <div class="panel">
+          <div class="panel-head"><div class="panel-title">Wi-Fi QR code</div></div>
+          <div class="qr-baseurl-hint" style="margin-bottom:16px;">Customers without mobile data can scan this to join your Wi-Fi first, then scan their table's code to see the menu. There's no single QR that both connects to Wi-Fi and opens a website on every phone, so print both together — that's the reliable way to do it.</div>
+          <div id="wifiQrWrap"></div>
+        </div>
+        <div class="panel">
           <div class="panel-head"><div class="panel-title">Table QR codes · 1–20</div></div>
           <div class="qrgrid" id="qrGrid"></div>
         </div>
@@ -703,6 +708,11 @@
           <div class="settingrow"><div><div class="setlabel">VAT rate</div><div class="setdesc" id="setVatRate">5%</div></div><span class="editbtn" id="editVatRate">Edit</span></div>
           <div class="settingrow"><div><div class="setlabel">BIN (Business Identification Number)</div><div class="setdesc" id="setBIN">Not set</div></div><span class="editbtn" id="editBIN">Edit</span></div>
           <div class="qr-baseurl-hint" style="margin-top:6px;">Set for an AC, non-alcohol restaurant — 5% is the typical NBR rate for this category. Confirm your exact rate with a licensed Bangladeshi VAT consultant, since it varies by hotel star rating and can change by NBR notification.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">Guest Wi-Fi</div></div>
+          <div class="settingrow"><div><div class="setlabel">Network</div><div class="setdesc" id="setWifiSSID">Not set</div></div><span class="editbtn" id="editWifi">Edit</span></div>
+          <div class="qr-baseurl-hint" style="margin-top:6px;">Generates a scan-to-connect QR code in the QR Codes tab, for customers without mobile data.</div>
         </div>
         <div class="panel">
           <div class="panel-head"><div class="panel-title">Notifications</div></div>
@@ -1287,6 +1297,9 @@ const SERVICE_CHARGE_RATE = 5;   // % — not government-mandated, this is your 
 let vatRate = 5;                 // % — NBR rate for AC, non-alcohol standalone restaurants is typically 5%; confirm your exact category with a VAT consultant
 let restaurantBIN = '';          // Business Identification Number — printed on receipts once set
 let businessDayStartHour = 6;    // 24hr hour (0-23) — lets late-night restaurants define when "today" resets, instead of hardcoded midnight
+let wifiSSID = '';               // guest Wi-Fi network name — generates a scan-to-join QR code
+let wifiPassword = '';
+let wifiEncryption = 'WPA';      // 'WPA' | 'WEP' | 'nopass'
 function applyBranding(){
   document.getElementById('welcomeTitle').textContent = restaurantName;
   document.getElementById('welcomeSub').textContent = `Modern Asian Kitchen · ${branchName}`;
@@ -1300,6 +1313,7 @@ function applyBranding(){
   const vatDesc = document.getElementById('setVatRate'); if(vatDesc) vatDesc.textContent = vatRate + '%';
   const binDesc = document.getElementById('setBIN'); if(binDesc) binDesc.textContent = restaurantBIN || 'Not set';
   const bizDesc = document.getElementById('setBusinessDay'); if(bizDesc) bizDesc.textContent = new Date(2000,0,1,businessDayStartHour).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+  const wifiDesc = document.getElementById('setWifiSSID'); if(wifiDesc) wifiDesc.textContent = wifiSSID || 'Not set';
 }
 let pdState = null;
 
@@ -2393,6 +2407,46 @@ function renderQR(){
     };
   });
 }
+
+function wifiQrString(){
+  const esc = s => (s||'').replace(/([\\;,:"])/g, '\\$1');
+  const type = wifiEncryption === 'nopass' ? 'nopass' : wifiEncryption;
+  return `WIFI:T:${type};S:${esc(wifiSSID)};P:${type==='nopass' ? '' : esc(wifiPassword)};H:false;;`;
+}
+function renderWifiQr(){
+  const wrap = document.getElementById('wifiQrWrap');
+  if(!wrap) return;
+  if(!wifiSSID){
+    wrap.innerHTML = `<div class="qr-baseurl-hint">Set your Wi-Fi network name and password in Settings to generate this code.</div>`;
+    return;
+  }
+  wrap.innerHTML = `
+    <div class="qrcard" style="max-width:220px;">
+      <div class="qrimg" id="qrimg-wifi"></div>
+      <div class="qrlabel">📶 ${wifiSSID}</div>
+      <div class="qrsub">Scan to join Wi-Fi</div>
+      <div class="qractions"><button data-dlwifi="1">Download</button></div>
+    </div>`;
+  const el = document.getElementById('qrimg-wifi');
+  if(window.QRCode){
+    new QRCode(el, { text: wifiQrString(), width:132, height:132, colorDark:'#1A2030', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M });
+  }else{
+    el.textContent = 'QR library loading…';
+  }
+  const dlBtn = document.querySelector('[data-dlwifi]');
+  if(dlBtn){
+    dlBtn.onclick = ()=>{
+      const canvas = el.querySelector('canvas');
+      const img = el.querySelector('img');
+      const dataUrl = canvas ? canvas.toDataURL('image/png') : (img ? img.src : null);
+      if(!dataUrl) return;
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `NOIR-WiFi-QR.png`;
+      a.click();
+    };
+  }
+}
 document.getElementById('qrRegenBtn').onclick = renderQR;
 
 document.querySelectorAll('.mgr-navitem').forEach(item=>{
@@ -2433,6 +2487,28 @@ document.getElementById('editBusinessDay').onclick = ()=>{
       businessDayStartHour = parseInt(v.hour);
       applyBranding();
       loadAndRenderOrders();
+    }
+  });
+};
+document.getElementById('editWifi').onclick = ()=>{
+  openEditModal({
+    title: 'Guest Wi-Fi',
+    sub: 'Generates a scan-to-connect QR code in the QR Codes tab.',
+    fields: [
+      { key:'ssid', label:'Network name (SSID)', value: wifiSSID },
+      { key:'security', label:'Security type', type:'select', value: wifiEncryption, options:[
+          { value:'WPA', label:'WPA/WPA2 (most common)' },
+          { value:'WEP', label:'WEP (older routers)' },
+          { value:'nopass', label:'Open network (no password)' }
+        ] },
+      { key:'password', label:'Password', value: wifiPassword }
+    ],
+    onSave: (v)=>{
+      wifiSSID = v.ssid.trim();
+      wifiEncryption = v.security;
+      wifiPassword = v.security === 'nopass' ? '' : v.password;
+      applyBranding();
+      renderWifiQr();
     }
   });
 };
@@ -2537,6 +2613,7 @@ document.getElementById('cartOverlay').onclick = closeCart;
 updateCartCount();
 applyBranding();
 renderQR();
+renderWifiQr();
 applyRoute();
 
 (async function initApp(){
