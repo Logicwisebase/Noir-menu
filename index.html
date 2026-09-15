@@ -1373,6 +1373,36 @@ function renderCustRight(){
   else renderDetailView();
 }
 
+/* ---------- swipe between category segments — small screens only ---------- */
+let swipeStartX = 0, swipeStartY = 0;
+function onCustSwipeStart(e){
+  const t = e.touches[0];
+  swipeStartX = t.clientX;
+  swipeStartY = t.clientY;
+}
+function onCustSwipeEnd(e){
+  if(window.innerWidth > 900) return;   // kiosk/desktop screens already have the full category bar — no gesture needed
+  if(viewMode !== 'grid') return;       // only navigate segments while browsing the grid, not inside an item's detail page
+  const t = e.changedTouches[0];
+  const deltaX = t.clientX - swipeStartX;
+  const deltaY = t.clientY - swipeStartY;
+  if(Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY)) return;   // ignore short or mostly-vertical (scrolling) touches
+  const idx = CATS.findIndex(c=>c.id===activeCat);
+  if(idx === -1) return;
+  if(deltaX < 0 && idx < CATS.length-1){
+    activeCat = CATS[idx+1].id;      // swipe left → next segment
+  }else if(deltaX > 0 && idx > 0){
+    activeCat = CATS[idx-1].id;      // swipe right → previous segment
+  }else{
+    return;
+  }
+  renderCustCats();
+  renderCustRight();
+  document.getElementById('custRight').scrollTop = 0;
+}
+document.getElementById('custRight').addEventListener('touchstart', onCustSwipeStart, { passive:true });
+document.getElementById('custRight').addEventListener('touchend', onCustSwipeEnd, { passive:true });
+
 function renderGridView(){
   const items = MENU.filter(m=>m.cat===activeCat);
   const label = CATS.find(c=>c.id===activeCat).label;
