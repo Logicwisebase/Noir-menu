@@ -184,6 +184,7 @@
   .modal-field{margin-bottom:14px;}
   .modal-field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-soft);margin-bottom:6px;}
   .modal-field input,.modal-field select{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:10px 13px;font-size:13.5px;font-family:inherit;color:var(--ink);}
+  .modal-field textarea{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:9px;padding:10px 13px;font-size:13px;font-family:inherit;color:var(--ink);resize:vertical;}
   .modal-field input[type="file"]{padding:8px 4px;border:1px dashed var(--line);background:var(--offwhite);font-size:12.5px;}
   .modal-img-preview{width:100%;aspect-ratio:16/10;border-radius:10px;overflow:hidden;margin-bottom:8px;background:var(--offwhite-2);}
   .modal-img-preview img{width:100%;height:100%;object-fit:cover;}
@@ -1188,6 +1189,29 @@ async function deleteExpense(id){
 }
 
 /* ---------- menu photo uploads (Supabase Storage) ---------- */
+function slugKey(s){
+  return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/(^_|_$)/g,'') || ('opt'+Math.random().toString(36).slice(2,7));
+}
+function parseVariantLines(text){
+  return (text||'').split('\n').map(l=>l.trim()).filter(Boolean).map(line=>{
+    const [namePart, pricePart] = line.split(',');
+    return { n: (namePart||'').trim(), p: pricePart ? (parseInt(pricePart.trim())||0) : 0 };
+  });
+}
+function parseAddonLines(text){
+  return (text||'').split('\n').map(l=>l.trim()).filter(Boolean).map(line=>{
+    const [namePart, pricePart] = line.split(',');
+    const n = (namePart||'').trim();
+    return { key: slugKey(n), n, p: pricePart ? (parseInt(pricePart.trim())||0) : 0 };
+  });
+}
+function parseRemovalLines(text){
+  return (text||'').split('\n').map(l=>l.trim()).filter(Boolean).map(n=>({ key: slugKey(n), n }));
+}
+function breadToText(bread){ return (bread||[]).map(b=>`${b.n}${b.p?', '+b.p:''}`).join('\n'); }
+function addonsToText(addons){ return (addons||[]).map(a=>`${a.n}${a.p?', '+a.p:''}`).join('\n'); }
+function removalsToText(removals){ return (removals||[]).map(r=>r.n).join('\n'); }
+
 async function uploadMenuImage(file){
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g,'') || 'jpg';
   const path = `item-${Date.now()}-${Math.round(Math.random()*1e6)}.${ext}`;
@@ -1247,6 +1271,10 @@ async function updateMenuItemRemote(id, patch){
   if('desc' in patch) dbPatch.description = patch.desc;
   if('img' in patch) dbPatch.img = patch.img;
   if('avail' in patch) dbPatch.avail = patch.avail;
+  if('bread' in patch) dbPatch.bread = patch.bread;
+  if('breadImg' in patch) dbPatch.bread_img = patch.breadImg;
+  if('addons' in patch) dbPatch.addons = patch.addons;
+  if('removals' in patch) dbPatch.removals = patch.removals;
   const { error } = await sb.from(MENUITEMS_TABLE).update(dbPatch).eq('id', id);
   if(error){ console.error('NOIR: could not update menu item', error); return false; }
   return true;
@@ -1971,6 +1999,13 @@ function openEditModal({ title, sub, fields, onSave }){
       <input type="file" accept="image/*" id="ef-${f.key}">
     </div>`;
     }
+    if(f.type === 'textarea'){
+      return `
+    <div class="modal-field">
+      <label>${f.label}</label>
+      <textarea id="ef-${f.key}" rows="3" placeholder="${f.placeholder||''}">${(f.value ?? '').toString().replace(/</g,'&lt;')}</textarea>
+    </div>`;
+    }
     return `
     <div class="modal-field">
       <label>${f.label}</label>
@@ -2120,7 +2155,10 @@ function renderMenuTable(){
           { key:'desc', label:'Description', value:m.desc || '' },
           { key:'price', label:'Price (৳)', value:m.price, type:'number' },
           { key:'cat', label:'Category', type:'select', value:m.cat, options: CATS.map(c=>({value:c.id, label:c.label})) },
-          { key:'img', label:'Photo (choose a file to replace it)', type:'file', value:m.img || '' }
+          { key:'img', label:'Photo (choose a file to replace it)', type:'file', value:m.img || '' },
+          { key:'variants', label:'Variant options (optional) — one per line as "Name, extra price"', type:'textarea', value: breadToText(m.bread), placeholder:'Regular bun, 0\nSesame bun, 30' },
+          { key:'addons', label:'Add-ons (optional) — one per line as "Name, price"', type:'textarea', value: addonsToText(m.addons), placeholder:'Extra cheese, 50\nFried egg, 40' },
+          { key:'removals', label:'Removable ingredients (optional) — one per line', type:'textarea', value: removalsToText(m.removals), placeholder:'Lettuce\nOnions' }
         ],
         onSave: async (v)=>{
           m.name = v.name.trim() || m.name;
@@ -2128,10 +2166,17 @@ function renderMenuTable(){
           m.price = parseInt(v.price) || m.price;
           m.cat = v.cat;
           m.img = v.img.trim() || m.img;
+          const bread = parseVariantLines(v.variants);
+          const addons = parseAddonLines(v.addons);
+          const removals = parseRemovalLines(v.removals);
+          m.bread = bread.length ? bread : null;
+          m.addons = addons.length ? addons : null;
+          m.removals = removals.length ? removals : null;
+          m.breadImg = null;   // editing the variant list here means any old per-variant photos no longer line up — reset to the single main photo
           renderMenuTable();
           renderCustCats();
           if(viewMode==='grid') renderCustRight();
-          await updateMenuItemRemote(m.id, { name:m.name, cat:m.cat, price:m.price, desc:m.desc, img:m.img });
+          await updateMenuItemRemote(m.id, { name:m.name, cat:m.cat, price:m.price, desc:m.desc, img:m.img, bread:m.bread, addons:m.addons, removals:m.removals, breadImg:null });
         }
       });
     };
@@ -2147,17 +2192,26 @@ document.getElementById('addProductBtn').onclick = ()=>{
       { key:'cat', label:'Category', type:'select', value:CATS[0].id, options: CATS.map(c=>({value:c.id, label:c.label})) },
       { key:'price', label:'Price (৳)', value:'', type:'number' },
       { key:'desc', label:'Description', value:'' },
-      { key:'img', label:'Photo', type:'file', value:'' }
+      { key:'img', label:'Photo', type:'file', value:'' },
+      { key:'variants', label:'Variant options (optional) — one per line as "Name, extra price"', type:'textarea', value:'', placeholder:'Regular bun, 0\nSesame bun, 30' },
+      { key:'addons', label:'Add-ons (optional) — one per line as "Name, price"', type:'textarea', value:'', placeholder:'Extra cheese, 50\nFried egg, 40' },
+      { key:'removals', label:'Removable ingredients (optional) — one per line', type:'textarea', value:'', placeholder:'Lettuce\nOnions' }
     ],
     onSave: async (v)=>{
       const name = v.name.trim();
       if(!name) return;
+      const bread = parseVariantLines(v.variants);
+      const addons = parseAddonLines(v.addons);
+      const removals = parseRemovalLines(v.removals);
       const newItem = {
         name, cat: v.cat, price: parseInt(v.price) || 0,
         desc: v.desc.trim() || 'No description yet.',
         img: v.img || null,
         tint: 'linear-gradient(160deg,#F0EDE3,#DCD6C4)',
-        avail: true
+        avail: true,
+        bread: bread.length ? bread : null,
+        addons: addons.length ? addons : null,
+        removals: removals.length ? removals : null
       };
       const saved = await insertMenuItemRemote(newItem);
       if(saved){
