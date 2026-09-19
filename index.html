@@ -66,6 +66,7 @@
   .cust-tablepill .dot{width:6px;height:6px;border-radius:50%;background:#8FA3F0;}
   .cust-search{flex:1;max-width:420px;background:rgba(255,255,255,.09);border-radius:10px;padding:11px 16px;display:flex;align-items:center;gap:9px;color:rgba(246,243,234,.5);font-size:13.5px;}
   .cust-topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+  .callwaiter-btn{background:rgba(255,255,255,.09);color:#fff;padding:11px 14px;border-radius:10px;font-size:12.5px;font-weight:700;white-space:nowrap;}
   .cust-cartbtn{position:relative;background:var(--accent);color:#fff;padding:11px 18px;border-radius:10px;font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:8px;}
   .cust-cart-count{background:#fff;color:var(--accent);width:19px;height:19px;border-radius:50%;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;}
 
@@ -188,8 +189,8 @@
   .modal-field input[type="file"]{padding:8px 4px;border:1px dashed var(--line);background:var(--offwhite);font-size:12.5px;}
   .modal-img-preview{width:100%;aspect-ratio:16/10;border-radius:10px;overflow:hidden;margin-bottom:8px;background:var(--offwhite-2);}
   .modal-img-preview img{width:100%;height:100%;object-fit:cover;}
-  .modal-actions{display:flex;gap:10px;margin-top:20px;}
-  .modal-actions button{flex:1;padding:12px;border-radius:9px;font-size:13.5px;font-weight:700;}
+  .modal-actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;}
+  .modal-actions button{flex:1;min-width:90px;padding:12px;border-radius:9px;font-size:13.5px;font-weight:700;}
   .modal-cancel{background:var(--offwhite-2);color:var(--ink);}
   .modal-save{background:var(--accent);color:#fff;}
   .modal-close-x{position:absolute;top:16px;right:18px;font-size:16px;color:var(--ink-soft);}
@@ -327,9 +328,12 @@
   .st-preparing{background:rgba(184,134,46,.13);color:var(--amber);}
   .st-ready{background:rgba(62,142,92,.13);color:var(--green);}
   .st-completed{background:var(--offwhite-2);color:var(--ink-soft);}
+  .st-cancelled{background:rgba(180,71,47,.12);color:var(--red);}
   .abtn{font-size:11.5px;font-weight:600;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);}
   .abtn.primary{background:var(--navy);color:#fff;border-color:var(--navy);}
   .noorders{padding:40px 10px;text-align:center;color:var(--ink-soft);font-size:13.5px;}
+  .waitercall-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(78,110,232,.15);font-size:13.5px;}
+  .waitercall-row:last-child{border-bottom:none;}
   .history-day{margin-bottom:26px;}
   .history-day:last-child{margin-bottom:0;}
   .history-day-head{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;padding-bottom:10px;margin-bottom:12px;border-bottom:1px solid var(--line);}
@@ -494,6 +498,8 @@
       <div class="cust-tablepill"><span class="dot"></span> <span id="tablePillLabel">Dine In</span></div>
       <div class="cust-search">🔍 Search the menu</div>
       <div class="cust-topbar-right">
+        <button class="callwaiter-btn" id="myOrderBtn" style="display:none;">🧾 My Order</button>
+        <button class="callwaiter-btn" id="callWaiterBtn" style="display:none;">🔔 Call Waiter</button>
         <button class="cust-cartbtn" id="cartBtn"><span>🛒 Cart</span><span class="cust-cart-count" id="cartCount">0</span></button>
       </div>
     </div>
@@ -540,6 +546,7 @@
       </div>
 
       <div class="mgr-view on" id="mgr-overview">
+        <div id="waiterCallsWrap" style="display:none;"></div>
         <div class="kpigrid">
           <div class="kpicard"><div class="l">Orders today</div><div class="v" id="kpiOrders">0</div><div class="d">Live session</div></div>
           <div class="kpicard"><div class="l">Revenue</div><div class="v" id="kpiRevenue">৳0</div><div class="d">Live session</div></div>
@@ -552,10 +559,8 @@
           <div id="overviewOrders"></div>
         </div>
         <div class="panel">
-          <div class="panel-head"><div class="panel-title">This week's insight</div></div>
-          <div class="insight"><b>Chicken Burger</b> is your best-selling item this week — 312 orders, up 18%.</div>
-          <div class="insight">Orders peak between <b>7 PM and 9 PM</b>. Consider adding a second kitchen shift on weekends.</div>
-          <div class="insight">Your <b>dessert category</b> receives high menu views but low conversions — worth a price or photo review.</div>
+          <div class="panel-head"><div class="panel-title">Insights</div></div>
+          <div id="overviewInsights"></div>
         </div>
       </div>
 
@@ -628,20 +633,12 @@
       <div class="mgr-view" id="mgr-analytics">
         <div class="twocol">
           <div class="panel">
-            <div class="panel-head"><div class="panel-title">Best-selling items — this week</div></div>
-            <div class="barrow"><span class="lbl">Chicken Burger</span><div class="bar"><i style="width:92%"></i></div><span class="val">312</span></div>
-            <div class="barrow"><span class="lbl">Truffle Fries</span><div class="bar"><i style="width:74%"></i></div><span class="val">251</span></div>
-            <div class="barrow"><span class="lbl">Ramen</span><div class="bar"><i style="width:61%"></i></div><span class="val">207</span></div>
-            <div class="barrow"><span class="lbl">Cold Coffee</span><div class="bar"><i style="width:48%"></i></div><span class="val">163</span></div>
-            <div class="barrow"><span class="lbl">Sushi Platter</span><div class="bar"><i style="width:35%"></i></div><span class="val">119</span></div>
+            <div class="panel-head"><div class="panel-title">Best-selling items</div></div>
+            <div id="analyticsBestSellers"></div>
           </div>
           <div class="panel">
             <div class="panel-head"><div class="panel-title">Peak ordering hours</div></div>
-            <div class="barrow"><span class="lbl">12 PM – 2 PM</span><div class="bar"><i style="width:46%"></i></div><span class="val">46%</span></div>
-            <div class="barrow"><span class="lbl">2 PM – 5 PM</span><div class="bar"><i style="width:22%"></i></div><span class="val">22%</span></div>
-            <div class="barrow"><span class="lbl">5 PM – 7 PM</span><div class="bar"><i style="width:38%"></i></div><span class="val">38%</span></div>
-            <div class="barrow"><span class="lbl">7 PM – 9 PM</span><div class="bar"><i style="width:100%"></i></div><span class="val">100%</span></div>
-            <div class="barrow"><span class="lbl">9 PM – 11 PM</span><div class="bar"><i style="width:54%"></i></div><span class="val">54%</span></div>
+            <div id="analyticsPeakHours"></div>
           </div>
         </div>
       </div>
@@ -955,6 +952,7 @@ const MENU_IMAGES_BUCKET = 'menu-images'; // Supabase Storage bucket for uploade
 const CATEGORIES_TABLE = 'Categories';    // real, shared menu structure — see the setup instructions
 const MENUITEMS_TABLE = 'MenuItems';      // real, shared menu structure — see the setup instructions
 const PROMO_TABLE = 'PromoCodes';         // promo codes + auto-generated reward codes — see the setup instructions
+const WAITERCALLS_TABLE = 'WaiterCalls';  // table-side "Call Waiter" requests — see the setup instructions
 const REWARD_VALUE = 300;                 // taka off, auto-granted every 5th visit
 
 const { createClient } = supabase;
@@ -978,8 +976,13 @@ function mapDbOrder(row){
     discountAmount: row.discount_amount || 0,
     rating: row.rating,
     feedback: row.feedback,
+    customerEditable: row.customer_editable || false,
     placedAt: row.placed_at ? new Date(row.placed_at).getTime() : Date.now()
   };
+}
+async function setOrderEditable(id, editable){
+  const { error } = await sb.from(ORDERS_TABLE).update({ customer_editable: editable }).eq('id', id);
+  if(error) console.error('NOIR: could not update edit permission', error);
 }
 
 async function fetchAllOrders(){
@@ -1069,6 +1072,9 @@ async function loadAndRenderOrders(){
   renderPromoTable();
   renderCustCats();
   if(viewMode==='grid') renderCustRight();
+  renderWaiterCalls();
+  renderAnalyticsTab();
+  renderInsights();
 }
 
 /* ---------- promo codes & auto-generated loyalty rewards ---------- */
@@ -1100,6 +1106,51 @@ function computeDiscountAmount(promo, subtotal){
   if(!promo) return 0;
   if(promo.discount_type === 'percent') return Math.round(subtotal * (promo.discount_value/100));
   return Math.min(promo.discount_value, subtotal);
+}
+
+/* ---------- table-side "Call Waiter" ---------- */
+async function insertWaiterCall(tableLbl){
+  const { error } = await sb.from(WAITERCALLS_TABLE).insert([{ table_label: tableLbl, status:'pending' }]);
+  if(error){ console.error('NOIR: could not send waiter call', error); return false; }
+  return true;
+}
+async function fetchPendingWaiterCalls(){
+  const { data, error } = await sb.from(WAITERCALLS_TABLE).select('*').eq('status','pending').order('created_at', { ascending:true });
+  if(error){ console.error('NOIR: could not load waiter calls', error); return null; }
+  return data || [];
+}
+async function acknowledgeWaiterCall(id){
+  const { error } = await sb.from(WAITERCALLS_TABLE).update({ status:'acknowledged' }).eq('id', id);
+  if(error) console.error('NOIR: could not acknowledge waiter call', error);
+}
+let knownWaiterCallIds = new Set();
+async function renderWaiterCalls(){
+  const wrap = document.getElementById('waiterCallsWrap');
+  if(!wrap) return;
+  const calls = await fetchPendingWaiterCalls();
+  if(calls === null) return;
+  if(knownWaiterCallIds.size > 0){
+    const hasNew = calls.some(c=>!knownWaiterCallIds.has(c.id));
+    if(hasNew) playChime();
+  }
+  knownWaiterCallIds = new Set(calls.map(c=>c.id));
+  if(calls.length === 0){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+  wrap.style.display = 'block';
+  wrap.innerHTML = `
+    <div class="panel" style="border-color:var(--accent);background:var(--accent-soft);margin-bottom:22px;">
+      <div class="panel-head"><div class="panel-title">🔔 Waiter requested</div></div>
+      ${calls.map(c=>`
+        <div class="waitercall-row">
+          <span><b>${c.table_label}</b> · ${timeAgo(new Date(c.created_at).getTime())}</span>
+          <button class="abtn primary" data-ackcall="${c.id}">Acknowledge</button>
+        </div>`).join('')}
+    </div>`;
+  document.querySelectorAll('[data-ackcall]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      await acknowledgeWaiterCall(parseInt(btn.dataset.ackcall));
+      renderWaiterCalls();
+    };
+  });
 }
 
 /* ---------- customer database (repeat visitors + reward eligibility) ---------- */
@@ -1365,6 +1416,19 @@ function enterMenu(){
   document.getElementById('orderTypeScreen').classList.remove('on');
   document.getElementById('custMenuStage').classList.add('on');
   document.getElementById('tablePillLabel').textContent = tableLabel;
+  document.getElementById('callWaiterBtn').style.display = orderType === 'dinein' ? 'block' : 'none';
+}
+document.getElementById('callWaiterBtn').onclick = async ()=>{
+  const btn = document.getElementById('callWaiterBtn');
+  btn.disabled = true; btn.textContent = 'Calling…';
+  const ok = await insertWaiterCall(tableLabel);
+  btn.disabled = false;
+  btn.textContent = ok ? '✓ Waiter notified' : '🔔 Call Waiter';
+  if(ok) setTimeout(()=>{ btn.textContent = '🔔 Call Waiter'; }, 5000);
+};
+document.getElementById('myOrderBtn').onclick = openMyOrderView;
+if(localStorage.getItem('noir_last_order_id')){
+  document.getElementById('myOrderBtn').style.display = 'block';
 }
 document.getElementById('welcomeScreen').addEventListener('click', ()=>{
   if(urlTable){
@@ -1746,6 +1810,71 @@ function placeOrder(){
 function starRowHtml(current){
   return Array.from({length:5}, (_,i)=>`<span class="star-btn ${i<current?'on':''}" data-star="${i+1}">★</span>`).join('');
 }
+function trackingTicketHtml(order){
+  return `
+    <div class="mini-ticket" id="trackTicket">
+      <b>${restaurantName}${restaurantBIN ? ' · BIN '+restaurantBIN : ''}</b><br>
+      ORDER #${order.id} · ${(order.tableLabel||'').toUpperCase()}<br>
+      ------------------------<br>
+      ${order.items.map(it=>`${it.qty}× ${it.name}`).join('<br>')}<br>
+      ------------------------<br>
+      Subtotal ${fmt(order.subtotal)}<br>
+      ${order.discountAmount ? `Discount −${fmt(order.discountAmount)}<br>` : ''}
+      Service (${SERVICE_CHARGE_RATE}%) ${fmt(order.service)}<br>
+      VAT (${vatRate}%) ${fmt(order.tax)}<br>
+      ------------------------<br>
+      TOTAL ${fmt(order.total)}
+    </div>`;
+}
+function renderOrderTrackingScreen(order, synced){
+  const el = document.getElementById('cartDrawer');
+  const canCustomerEdit = order.customerEditable && (order.status==='new' || order.status==='preparing');
+  el.innerHTML = `
+    <div class="cart-drawer-head"><div class="cart-drawer-title">Your order</div><div class="cart-close" id="cartCloseBtn">✕</div></div>
+    <div class="confirm">
+      <div class="confirm-icon">✓</div>
+      <h3>Order #${order.id} sent to the kitchen</h3>
+      <p>${order.orderType === 'takeaway' ? 'NOIR will have your order ready for pickup shortly.' : order.tableLabel + ' · NOIR will bring your order out shortly.'}${synced ? '' : ' (This device couldn\'t reach the kitchen system — please tell a staff member your order at the counter.)'}</p>
+      ${trackingTicketHtml(order)}
+      ${synced && typeof order.id === 'number' ? `
+        <div class="track-wrap">
+          <div class="track-label">Order status</div>
+          <div id="trackStatus"></div>
+          <button class="callwaiter-btn" id="trackCallWaiterBtn" style="margin-top:14px;width:100%;color:var(--ink);border:1px solid var(--line);">🔔 Call Waiter</button>
+          <div class="rate-wrap" id="trackEditWrap" style="display:${canCustomerEdit?'block':'none'};">
+            <div class="track-label">Need to change something?</div>
+            <button class="place-btn" id="trackEditBtn" style="background:var(--navy);">Edit your order</button>
+          </div>
+          <div class="rate-wrap" id="trackRating" style="display:none;">
+            <div class="track-label">How was it?</div>
+            <div class="star-row" id="starRow">${starRowHtml(0)}</div>
+            <textarea id="feedbackInput" placeholder="Anything you'd like to tell us? (optional)" rows="2"></textarea>
+            <button id="submitRatingBtn" class="place-btn" style="margin-top:8px;">Submit feedback</button>
+          </div>
+        </div>` : ''}
+      <button id="doneBtn">Back to Menu</button>
+    </div>`;
+  document.getElementById('cartCloseBtn').onclick = closeCart;
+  document.getElementById('doneBtn').onclick = ()=>{ closeCart(); };
+  const trackWaiterBtn = document.getElementById('trackCallWaiterBtn');
+  if(trackWaiterBtn){
+    trackWaiterBtn.onclick = async ()=>{
+      trackWaiterBtn.disabled = true; trackWaiterBtn.textContent = 'Calling…';
+      const ok = await insertWaiterCall(order.tableLabel);
+      trackWaiterBtn.textContent = ok ? '✓ Waiter notified' : '🔔 Call Waiter';
+      trackWaiterBtn.disabled = false;
+      if(ok) setTimeout(()=>{ trackWaiterBtn.textContent = '🔔 Call Waiter'; }, 5000);
+    };
+  }
+  const editBtn = document.getElementById('trackEditBtn');
+  if(editBtn) editBtn.onclick = ()=>openOrderEditModal(order, closeModal);
+
+  if(synced && typeof order.id === 'number'){
+    localStorage.setItem('noir_last_order_id', String(order.id));
+    document.getElementById('myOrderBtn').style.display = 'block';
+    startTrackingOrder(order.id);
+  }
+}
 
 async function placeOrderRemote(itemsSnapshot, subtotal, service, tax, total, discountAmount){
   const usedPromo = appliedPromo;
@@ -1755,7 +1884,7 @@ async function placeOrderRemote(itemsSnapshot, subtotal, service, tax, total, di
     promoCode: usedPromo ? usedPromo.code : null, discountAmount
   });
   const synced = !!saved;
-  const order = saved || { id: '—', tableLabel, orderType, items: itemsSnapshot, subtotal, service, tax, total, status: 'new', placedAt: Date.now() };
+  const order = saved || { id: '—', tableLabel, orderType, items: itemsSnapshot, subtotal, service, tax, total, status: 'new', placedAt: Date.now(), customerEditable:false };
 
   if(synced){
     recordCustomerVisit(checkoutName.trim(), checkoutPhone.trim(), total);
@@ -1768,45 +1897,18 @@ async function placeOrderRemote(itemsSnapshot, subtotal, service, tax, total, di
   cart = [];
   updateCartCount();
 
-  const el = document.getElementById('cartDrawer');
-  el.innerHTML = `
-    <div class="cart-drawer-head"><div class="cart-drawer-title">Order sent</div><div class="cart-close" id="cartCloseBtn">✕</div></div>
-    <div class="confirm">
-      <div class="confirm-icon">✓</div>
-      <h3>Order #${order.id} sent to the kitchen</h3>
-      <p>${orderType === 'takeaway' ? 'NOIR will have your order ready for pickup shortly.' : tableLabel + ' · NOIR will bring your order out shortly.'}${synced ? '' : ' (This device couldn\'t reach the kitchen system — please tell a staff member your order at the counter.)'}</p>
-      <div class="mini-ticket">
-        <b>${restaurantName}${restaurantBIN ? ' · BIN '+restaurantBIN : ''}</b><br>
-        ORDER #${order.id} · ${(order.tableLabel||'').toUpperCase()}<br>
-        ------------------------<br>
-        ${order.items.map(it=>`${it.qty}× ${it.name}`).join('<br>')}<br>
-        ------------------------<br>
-        Subtotal ${fmt(order.subtotal)}<br>
-        ${order.discountAmount ? `Discount −${fmt(order.discountAmount)}<br>` : ''}
-        Service (${SERVICE_CHARGE_RATE}%) ${fmt(order.service)}<br>
-        VAT (${vatRate}%) ${fmt(order.tax)}<br>
-        ------------------------<br>
-        TOTAL ${fmt(order.total)}
-      </div>
-      ${synced && typeof order.id === 'number' ? `
-        <div class="track-wrap">
-          <div class="track-label">Order status</div>
-          <div id="trackStatus"></div>
-          <div class="rate-wrap" id="trackRating" style="display:none;">
-            <div class="track-label">How was it?</div>
-            <div class="star-row" id="starRow">${starRowHtml(0)}</div>
-            <textarea id="feedbackInput" placeholder="Anything you'd like to tell us? (optional)" rows="2"></textarea>
-            <button id="submitRatingBtn" class="place-btn" style="margin-top:8px;">Submit feedback</button>
-          </div>
-        </div>` : ''}
-      <button id="doneBtn">Back to Menu</button>
-    </div>`;
-  document.getElementById('cartCloseBtn').onclick = closeCart;
-  document.getElementById('doneBtn').onclick = ()=>{ stopTrackingOrder(); closeCart(); };
+  renderOrderTrackingScreen(order, synced);
+}
 
-  if(synced && typeof order.id === 'number'){
-    startTrackingOrder(order.id);
-  }
+async function openMyOrderView(){
+  const lastId = localStorage.getItem('noir_last_order_id');
+  if(!lastId) return;
+  const { data, error } = await sb.from(ORDERS_TABLE).select('*').eq('id', parseInt(lastId)).maybeSingle();
+  if(error || !data) return;
+  const order = mapDbOrder(data);
+  renderOrderTrackingScreen(order, true);
+  document.getElementById('cartOverlay').classList.add('show');
+  document.getElementById('cartDrawer').classList.add('show');
 }
 
 function startTrackingOrder(orderId){
@@ -1831,6 +1933,18 @@ function renderTrackingStatus(order){
   const statusEl = document.getElementById('trackStatus');
   if(!statusEl) return; // drawer moved on — stop bothering the DOM
   statusEl.innerHTML = `<span class="status-pill st-${order.status}">${STATUS_LABEL[order.status]}</span>`;
+
+  const ticketEl = document.getElementById('trackTicket');
+  if(ticketEl) ticketEl.outerHTML = trackingTicketHtml(order);
+
+  const editWrap = document.getElementById('trackEditWrap');
+  if(editWrap){
+    const canCustomerEdit = order.customerEditable && (order.status==='new' || order.status==='preparing');
+    editWrap.style.display = canCustomerEdit ? 'block' : 'none';
+    const editBtn = document.getElementById('trackEditBtn');
+    if(editBtn) editBtn.onclick = ()=>openOrderEditModal(order, closeModal);
+  }
+
   const ratingWrap = document.getElementById('trackRating');
   if(!ratingWrap) return;
   if(order.rating){
@@ -1870,7 +1984,7 @@ function timeAgo(ts){
   return m+' min ago';
 }
 const STATUS_FLOW = {new:'preparing', preparing:'ready', ready:'completed'};
-const STATUS_LABEL = {new:'New', preparing:'Preparing', ready:'Ready', completed:'Completed'};
+const STATUS_LABEL = {new:'New', preparing:'Preparing', ready:'Ready', completed:'Completed', cancelled:'Cancelled'};
 const STATUS_ACTION = {new:'Accept', preparing:'Mark Ready', ready:'Complete'};
 
 function orderCardHtml(o, withAction){
@@ -1887,7 +2001,7 @@ function orderCardHtml(o, withAction){
 }
 function ticketHtml(o){
   return `<div class="ticket">
-    <div class="ticket-head">${restaurantName} · ${(o.tableLabel||'').toUpperCase()}<br>ORDER #${o.id}</div>
+    <div class="ticket-head">${restaurantName} · ${(o.tableLabel||'').toUpperCase()}<br>ORDER #${o.id}${o.status==='cancelled' ? ' · <span style="color:var(--red);">CANCELLED</span>' : ''}</div>
     ${o.items.map(it=>`<div class="ticket-row"><span>${it.qty}× ${it.name}</span></div>${it.mods.length?`<div style="padding-left:10px;color:#8a92a3;">${it.mods.join(', ')}</div>`:''}`).join('')}
     <div class="ticket-foot">TOTAL ${fmt(o.total)}<br>${new Date(o.placedAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</div>
   </div>`;
@@ -1949,6 +2063,7 @@ document.getElementById('modalOverlay').onclick = closeModal;
 
 function openOrderDetailModal(o){
   const paymentLabel = { cash:'💵 Cash', bkash:'📱 bKash', nagad:'📱 Nagad', card:'💳 Card' }[o.paymentMethod] || '—';
+  const canModify = o.status !== 'completed' && o.status !== 'cancelled';
   openModal(`
     <div class="modal-close-x" id="modalCloseX">✕</div>
     <div class="modal-title">Order #${o.id} · ${o.tableLabel}</div>
@@ -1973,10 +2088,27 @@ function openOrderDetailModal(o){
     ${o.rating ? `
       <div class="od-row"><span>Rating</span><span>${'★'.repeat(o.rating)}${'☆'.repeat(5-o.rating)}</span></div>
       ${o.feedback ? `<div class="od-row"><span>Feedback</span><span style="text-align:right;max-width:220px;">${o.feedback}</span></div>` : ''}` : ''}
-    ${STATUS_FLOW[o.status] ? `<div class="modal-actions"><button class="modal-cancel" id="modalCancelBtn">Close</button><button class="modal-save" data-advance="${o.id}" id="modalAdvanceBtn">${STATUS_ACTION[o.status]}</button></div>` : `<div class="modal-actions"><button class="modal-cancel" id="modalCancelBtn">Close</button></div>`}
+    ${canModify ? `
+      <div class="settingrow" style="padding:12px 0;">
+        <div><div class="setlabel" style="font-size:13px;">Let customer edit this order</div><div class="setdesc" style="font-size:11.5px;">Shows an edit option on their own order-tracking screen</div></div>
+        <div class="toggle ${o.customerEditable?'on':''}" id="custEditToggle"><div class="dot"></div></div>
+      </div>` : ''}
+    <div class="modal-actions">
+      <button class="modal-cancel" id="modalCancelBtn">Close</button>
+      ${canModify ? `<button class="modal-cancel" id="modalEditOrderBtn" style="color:var(--red);">Edit / Cancel</button>` : ''}
+      ${STATUS_FLOW[o.status] ? `<button class="modal-save" data-advance="${o.id}" id="modalAdvanceBtn">${STATUS_ACTION[o.status]}</button>` : ''}
+    </div>
   `);
   document.getElementById('modalCloseX').onclick = closeModal;
   document.getElementById('modalCancelBtn').onclick = closeModal;
+  const custEditToggle = document.getElementById('custEditToggle');
+  if(custEditToggle){
+    custEditToggle.onclick = async ()=>{
+      o.customerEditable = !o.customerEditable;
+      custEditToggle.classList.toggle('on');
+      await setOrderEditable(o.id, o.customerEditable);
+    };
+  }
   const advBtn = document.getElementById('modalAdvanceBtn');
   if(advBtn){
     advBtn.onclick = ()=>{
@@ -1987,6 +2119,164 @@ function openOrderDetailModal(o){
       closeModal();
     };
   }
+  const editBtn = document.getElementById('modalEditOrderBtn');
+  if(editBtn){ editBtn.onclick = ()=>openOrderEditModal(o); }
+}
+
+function computeItemsSubtotal(items){
+  return items.reduce((s,it)=>s+it.unitPrice*it.qty, 0);
+}
+
+function renderAnalyticsTab(){
+  const activeOrders = ORDERS.filter(o=>o.status!=='cancelled');
+
+  const counts = {};
+  activeOrders.forEach(o=>o.items.forEach(it=>{ counts[it.name] = (counts[it.name]||0) + it.qty; }));
+  const top5 = Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const maxCount = top5.length ? top5[0][1] : 1;
+  const bestSellersEl = document.getElementById('analyticsBestSellers');
+  if(bestSellersEl){
+    bestSellersEl.innerHTML = top5.length
+      ? top5.map(([name,qty])=>`<div class="barrow"><span class="lbl">${name}</span><div class="bar"><i style="width:${Math.round(qty/maxCount*100)}%"></i></div><span class="val">${qty}</span></div>`).join('')
+      : `<div class="noorders">Not enough order data yet.</div>`;
+  }
+
+  const bands = [
+    { label:'12 AM – 6 AM', from:0, to:6 },
+    { label:'6 AM – 12 PM', from:6, to:12 },
+    { label:'12 PM – 5 PM', from:12, to:17 },
+    { label:'5 PM – 9 PM', from:17, to:21 },
+    { label:'9 PM – 12 AM', from:21, to:24 }
+  ];
+  const bandCounts = bands.map(b=>({
+    label: b.label,
+    count: activeOrders.filter(o=>{ const h = new Date(o.placedAt).getHours(); return h >= b.from && h < b.to; }).length
+  }));
+  const maxBand = Math.max(1, ...bandCounts.map(b=>b.count));
+  const peakEl = document.getElementById('analyticsPeakHours');
+  if(peakEl){
+    peakEl.innerHTML = activeOrders.length
+      ? bandCounts.map(b=>`<div class="barrow"><span class="lbl">${b.label}</span><div class="bar"><i style="width:${Math.round(b.count/maxBand*100)}%"></i></div><span class="val">${Math.round(b.count/maxBand*100)}%</span></div>`).join('')
+      : `<div class="noorders">Not enough order data yet.</div>`;
+  }
+}
+
+function renderInsights(){
+  const el = document.getElementById('overviewInsights');
+  if(!el) return;
+  const activeOrders = ORDERS.filter(o=>o.status!=='cancelled');
+  if(activeOrders.length === 0){
+    el.innerHTML = `<div class="insight">Insights will appear here once you have a few orders.</div>`;
+    return;
+  }
+  const counts = {};
+  activeOrders.forEach(o=>o.items.forEach(it=>{ counts[it.name] = (counts[it.name]||0) + it.qty; }));
+  const topItem = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+  const hourCounts = {};
+  activeOrders.forEach(o=>{ const h = new Date(o.placedAt).getHours(); hourCounts[h] = (hourCounts[h]||0) + 1; });
+  const topHourEntry = Object.entries(hourCounts).sort((a,b)=>b[1]-a[1])[0];
+
+  const insights = [];
+  if(topItem) insights.push(`<b>${topItem[0]}</b> is your best-selling item so far — ${topItem[1]} ordered.`);
+  if(topHourEntry){
+    const label = new Date(2000,0,1,parseInt(topHourEntry[0])).toLocaleTimeString([], {hour:'numeric'});
+    insights.push(`Orders peak around <b>${label}</b>. Worth having extra staff on for that window.`);
+  }
+  const cancelledCount = ORDERS.filter(o=>o.status==='cancelled').length;
+  if(cancelledCount > 0) insights.push(`<b>${cancelledCount}</b> order${cancelledCount===1?' has':'s have'} been cancelled all-time — worth a look if that number keeps climbing.`);
+
+  el.innerHTML = insights.length
+    ? insights.map(t=>`<div class="insight">${t}</div>`).join('')
+    : `<div class="insight">Insights will appear here once you have a few orders.</div>`;
+}
+
+async function cancelOrderFromEdit(o){
+  if(!confirm(`Cancel order #${o.id}? This can't be undone.`)) return;
+  o.status = 'cancelled';
+  await updateOrderStatus(o.id, 'cancelled');
+  renderAllManagerData();
+  renderHistoryTab();
+  renderPnl(currentPnlPeriod);
+  closeModal();
+}
+
+function openOrderEditModal(o, onBack){
+  onBack = onBack || (()=>openOrderDetailModal(o));
+  let items = o.items.map(it=>({ ...it }));
+
+  function render(){
+    const rawSubtotal = computeItemsSubtotal(items);
+    const discount = Math.min(o.discountAmount||0, rawSubtotal);
+    const subtotal = Math.max(0, rawSubtotal - discount);
+    const service = Math.round(subtotal * (SERVICE_CHARGE_RATE/100));
+    const vat = Math.round((subtotal+service) * (vatRate/100));
+    const total = subtotal+service+vat;
+
+    openModal(`
+      <div class="modal-close-x" id="modalCloseX">✕</div>
+      <div class="modal-title">Edit order #${o.id}</div>
+      <div class="modal-sub">Adjust quantities or remove items, then save. Removing everything cancels the order.</div>
+      ${items.length ? items.map((it,idx)=>`
+        <div class="od-item" style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div class="odi-name">${it.name}</div>
+            ${it.mods.length ? `<div class="odi-mods">${it.mods.join(', ')}</div>` : ''}
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+            <div class="ci-qty"><button data-editdec="${idx}">−</button><div class="qty-num">${it.qty}</div><button data-editinc="${idx}">+</button></div>
+            <span class="editbtn" data-editremove="${idx}" style="color:var(--red);">Remove</span>
+          </div>
+        </div>`).join('') : `<div class="noorders">No items left — saving will cancel this order.</div>`}
+      <div class="od-row" style="margin-top:14px;"><span>Subtotal</span><span>${fmt(rawSubtotal)}</span></div>
+      ${discount ? `<div class="od-row" style="color:var(--green);"><span>Discount</span><span>− ${fmt(discount)}</span></div>` : ''}
+      <div class="od-row"><span>Service charge</span><span>${fmt(service)}</span></div>
+      <div class="od-row"><span>VAT</span><span>${fmt(vat)}</span></div>
+      <div class="od-row" style="font-weight:700;"><span>New total</span><span>${fmt(total)}</span></div>
+      <div class="modal-actions">
+        <button class="modal-cancel" id="modalCancelBtn">Back</button>
+        <button class="modal-cancel" id="modalCancelOrderBtn" style="color:var(--red);">Cancel order</button>
+        <button class="modal-save" id="modalSaveEditBtn">Save changes</button>
+      </div>
+    `);
+    document.getElementById('modalCloseX').onclick = closeModal;
+    document.getElementById('modalCancelBtn').onclick = onBack;
+    document.getElementById('modalCancelOrderBtn').onclick = ()=>cancelOrderFromEdit(o);
+    document.querySelectorAll('[data-editinc]').forEach(b=>{
+      b.onclick = ()=>{ items[parseInt(b.dataset.editinc)].qty++; render(); };
+    });
+    document.querySelectorAll('[data-editdec]').forEach(b=>{
+      b.onclick = ()=>{
+        const i = parseInt(b.dataset.editdec);
+        items[i].qty--;
+        if(items[i].qty <= 0) items.splice(i,1);
+        render();
+      };
+    });
+    document.querySelectorAll('[data-editremove]').forEach(b=>{
+      b.onclick = ()=>{ items.splice(parseInt(b.dataset.editremove),1); render(); };
+    });
+    document.getElementById('modalSaveEditBtn').onclick = async ()=>{
+      if(items.length === 0){
+        await cancelOrderFromEdit(o);
+        return;
+      }
+      const newSubtotalRaw = computeItemsSubtotal(items);
+      const newDiscount = Math.min(o.discountAmount||0, newSubtotalRaw);
+      const newSubtotal = Math.max(0, newSubtotalRaw - newDiscount);
+      const newService = Math.round(newSubtotal * (SERVICE_CHARGE_RATE/100));
+      const newVat = Math.round((newSubtotal+newService) * (vatRate/100));
+      const newTotal = newSubtotal+newService+newVat;
+      await sb.from(ORDERS_TABLE).update({
+        items, subtotal:newSubtotal, service:newService, tax:newVat, total:newTotal, discount_amount:newDiscount
+      }).eq('id', o.id);
+      o.items = items; o.subtotal = newSubtotal; o.service = newService; o.tax = newVat; o.total = newTotal; o.discountAmount = newDiscount;
+      renderAllManagerData();
+      renderHistoryTab();
+      renderPnl(currentPnlPeriod);
+      closeModal();
+    };
+  }
+  render();
 }
 
 function openEditModal({ title, sub, fields, onSave }){
@@ -2076,16 +2366,17 @@ function isToday(ts){
 
 function renderAllManagerData(){
   const todaysOrders = ORDERS.filter(o=>isToday(o.placedAt));
-  document.getElementById('ordersBadge').textContent = todaysOrders.filter(o=>o.status!=='completed').length;
+  const activeToday = todaysOrders.filter(o=>o.status!=='cancelled');
+  document.getElementById('ordersBadge').textContent = todaysOrders.filter(o=>o.status!=='completed' && o.status!=='cancelled').length;
 
-  // overview — today only, so the dashboard starts fresh each day instead of piling up forever
-  document.getElementById('kpiOrders').textContent = todaysOrders.length;
-  const revenue = todaysOrders.reduce((s,o)=>s+o.total,0);
+  // overview — today only (excluding cancelled orders from the numbers), so the dashboard starts fresh each day instead of piling up forever
+  document.getElementById('kpiOrders').textContent = activeToday.length;
+  const revenue = activeToday.reduce((s,o)=>s+o.total,0);
   document.getElementById('kpiRevenue').textContent = fmt(revenue);
-  document.getElementById('kpiAvg').textContent = todaysOrders.length? fmt(Math.round(revenue/todaysOrders.length)) : '৳0';
-  document.getElementById('kpiTables').textContent = new Set(todaysOrders.filter(o=>o.orderType==='dinein').map(o=>o.tableLabel)).size;
+  document.getElementById('kpiAvg').textContent = activeToday.length? fmt(Math.round(revenue/activeToday.length)) : '৳0';
+  document.getElementById('kpiTables').textContent = new Set(activeToday.filter(o=>o.orderType==='dinein').map(o=>o.tableLabel)).size;
   const counts = {};
-  todaysOrders.forEach(o=>o.items.forEach(it=>{ counts[it.name]=(counts[it.name]||0)+it.qty; }));
+  activeToday.forEach(o=>o.items.forEach(it=>{ counts[it.name]=(counts[it.name]||0)+it.qty; }));
   const top = Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
   document.getElementById('kpiPopular').textContent = top? top[0] : '—';
 
@@ -2278,7 +2569,7 @@ function getPeriodRange(period){
 
 function computePnl(period){
   const { start, end, label } = getPeriodRange(period);
-  const filtered = ORDERS.filter(o=>o.placedAt >= start.getTime() && o.placedAt < end.getTime());
+  const filtered = ORDERS.filter(o=>o.placedAt >= start.getTime() && o.placedAt < end.getTime() && o.status !== 'cancelled');
   const grossSales = filtered.reduce((s,o)=>s+o.subtotal, 0);
   const serviceCharge = filtered.reduce((s,o)=>s+o.service, 0);
   const taxCollected = filtered.reduce((s,o)=>s+o.tax, 0);
